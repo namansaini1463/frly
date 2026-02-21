@@ -110,8 +110,9 @@ const NoteView = ({ sectionId }) => {
             <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="flex-1 w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm text-gray-800 bg-gray-50"
+                className="w-full min-h-[260px] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-sm text-gray-800 bg-gray-50"
                 placeholder="Start typing your note..."
+                rows={Math.min(40, Math.max(10, Math.ceil((content?.length || 0) / 120)))}
             />
         </div>
     );

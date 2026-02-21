@@ -9,4 +9,5 @@ public class GroupMemberSimpleDto {
     private String lastName;
     private String email;
     private String role;
+    private String pfpUrl;
 }

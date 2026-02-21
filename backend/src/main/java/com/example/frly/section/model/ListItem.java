@@ -1,6 +1,7 @@
 package com.example.frly.section.model;
 
 import com.example.frly.common.GroupAwareEntity;
+import com.example.frly.common.enums.RecordStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,4 +33,8 @@ public class ListItem extends GroupAwareEntity {
 
     @Column(name = "position_order")
     private Integer position;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecordStatus status = RecordStatus.ACTIVE;
 }

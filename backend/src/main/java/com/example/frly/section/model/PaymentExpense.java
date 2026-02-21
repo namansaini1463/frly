@@ -1,6 +1,7 @@
 package com.example.frly.section.model;
 
 import com.example.frly.common.GroupAwareEntity;
+import com.example.frly.common.enums.RecordStatus;
 import com.example.frly.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -38,4 +39,8 @@ public class PaymentExpense extends GroupAwareEntity {
 
     @Column(name = "expense_date")
     private OffsetDateTime expenseDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecordStatus status = RecordStatus.ACTIVE;
 }

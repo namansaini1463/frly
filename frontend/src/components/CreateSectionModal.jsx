@@ -22,26 +22,40 @@ const CreateSectionModal = ({ onClose, onCreated, groupId, parentId = null }) =>
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-                <h2 className="text-xl font-bold mb-4">Create New Section</h2>
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-md mx-4 overflow-hidden">
+                <div className="px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Title</label>
+                        <h2 className="text-sm font-semibold text-gray-900">Create new section</h2>
+                        <p className="mt-0.5 text-xs text-gray-500">Add a note, list, folder, or expense area to this group.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 text-sm"
+                    >
+                        Back
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 tracking-wide">Title</label>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="mt-1 block w-full border rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            placeholder="Section name"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Type</label>
+                        <label className="block text-xs font-medium text-gray-700 tracking-wide">Type</label>
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            className="mt-1 block w-full border rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            className="mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="NOTE">Note</option>
                             <option value="LIST">List</option>
@@ -54,19 +68,19 @@ const CreateSectionModal = ({ onClose, onCreated, groupId, parentId = null }) =>
 
                     {/* Security UI removed: sections are no longer password protected */}
 
-                    <div className="flex justify-end gap-2 mt-2">
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 mt-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                            className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                         >
-                            Create
+                            Create section
                         </button>
                     </div>
                 </form>

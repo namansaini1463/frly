@@ -5,6 +5,7 @@ import com.example.frly.group.dto.GroupResponseDto;
 import com.example.frly.group.dto.GroupJoinRequestDto;
 import com.example.frly.group.dto.JoinGroupRequestDto;
 import com.example.frly.group.dto.UpdateViewPreferenceRequestDto;
+import com.example.frly.group.dto.UpdateGroupRequestDto;
 import com.example.frly.group.dto.GroupMemberSimpleDto;
 import com.example.frly.group.service.GroupService;
 import com.example.frly.auth.AuthUtil;
@@ -61,6 +62,24 @@ public class GroupController {
                                                      @RequestBody UpdateViewPreferenceRequestDto request) {
         Long userId = AuthUtil.getCurrentUserId();
         groupService.updateViewPreference(userId, groupId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{groupId}")
+    public ResponseEntity<GroupResponseDto> updateGroup(@PathVariable Long groupId,
+                                                        @RequestBody UpdateGroupRequestDto request) {
+        return ResponseEntity.ok(groupService.updateGroup(groupId, request));
+    }
+
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId) {
+        groupService.deleteGroup(groupId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<Void> removeMember(@PathVariable Long groupId, @PathVariable Long userId) {
+        groupService.removeMember(groupId, userId);
         return ResponseEntity.noContent().build();
     }
 }

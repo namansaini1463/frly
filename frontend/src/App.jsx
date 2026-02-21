@@ -16,6 +16,7 @@ import GroupView from './pages/GroupView';
 import SectionView from './pages/SectionView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/Profile';
+import MemberProfile from './pages/MemberProfile';
 
 function App() {
   return (
@@ -102,6 +103,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users/:userId"
+            element={
+              <ProtectedRoute>
+                <MemberProfile />
               </ProtectedRoute>
             }
           />

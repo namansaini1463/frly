@@ -19,8 +19,8 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:harshj2010@gmail.com}")
-    private String fromAddress = "harshj2010@gmail.com";
+    @Value("${app.mail.from:frlyofficial@gmail.com}")
+    private String fromAddress = "frlyofficial@gmail.com";
 
     public void sendPlainText(String to, String subject, String body) {
         try {

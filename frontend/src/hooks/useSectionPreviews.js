@@ -66,14 +66,20 @@ export const useSectionPreviews = (sections) => {
                             totalCount: items.length
                         };
                     } else if (section.type === 'PAYMENT') {
-                        const res = await axiosClient.get(`/groups/sections/${section.id}/payments/balances`);
-                        const balances = Array.isArray(res.data) ? res.data : [];
-                        // Find current user's balance
+                        const [balancesRes, expensesRes] = await Promise.all([
+                            axiosClient.get(`/groups/sections/${section.id}/payments/balances`),
+                            axiosClient.get(`/groups/sections/${section.id}/payments/expenses`),
+                        ]);
+                        const balances = Array.isArray(balancesRes.data) ? balancesRes.data : [];
+                        const expenses = Array.isArray(expensesRes.data) ? expensesRes.data : [];
+                        // Find current user's balance, but also compute total volume so card isn't misleadingly 0
                         const myBalance = balances.find(b => b.userId === user?.userId);
+                        const totalSpent = expenses.reduce((sum, e) => sum + (e.totalAmount || 0), 0);
                         newPreviews[section.id] = {
                             kind: 'PAYMENT',
                             balance: myBalance ? myBalance.balance : 0,
-                            hasActivity: balances.length > 0
+                            totalSpent,
+                            hasActivity: balances.length > 0 || expenses.length > 0,
                         };
                     }
                 } catch (error) {

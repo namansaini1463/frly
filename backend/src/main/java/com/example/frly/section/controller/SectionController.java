@@ -30,6 +30,12 @@ public class SectionController {
         return ResponseEntity.ok(sectionService.getSections());
     }
 
+    @DeleteMapping("/{sectionId}")
+    public ResponseEntity<Void> deleteSection(@PathVariable Long sectionId) {
+        sectionService.deleteSection(sectionId);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- LIST ITEMS ---
 
     @PostMapping("/{sectionId}/items")

@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface NoteRepository extends JpaRepository<Note, Long> {
     Optional<Note> findBySectionId(Long sectionId);
+
+    void deleteBySectionId(Long sectionId);
 }

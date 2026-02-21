@@ -1,77 +1,129 @@
-import React, { useState } from 'react';
-import {
-    FileText,
-    ListChecks,
-    Image,
-    Folder,
-    FolderOpen,
-    Clock,
-    File,
-    ChevronRight,
-    ChevronDown
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 const SidebarSection = ({ section, allSections, selectedSection, onSelect, depth = 0 }) => {
     // Find children of this section
     const children = allSections.filter(s => s.parentId === section.id);
     const hasChildren = children.length > 0;
 
-    // Auto-expand if the selected section is a descendant of this section
-    // (Simple check: if selected section has this as parent, etc. - complex to track entire ancestry without map)
     const [isExpanded, setIsExpanded] = useState(false);
 
     const isSelected = selectedSection?.id === section.id;
     const isFolder = section.type === 'FOLDER';
 
-    const handleToggle = (e) => {
-        e.stopPropagation();
-        setIsExpanded(!isExpanded);
+    const isAncestorOfSelected = () => {
+        if (!selectedSection || !selectedSection.parentId) return false;
+        let current = allSections.find(s => s.id === selectedSection.parentId);
+        while (current) {
+            if (current.id === section.id) return true;
+            if (!current.parentId) break;
+            current = allSections.find(s => s.id === current.parentId);
+        }
+        return false;
     };
+
+    let typeClasses;
+    let typeLabelClasses;
+    let indicatorClasses;
+    switch (section.type) {
+        case 'NOTE':
+            typeClasses = isSelected
+                ? 'bg-blue-50 text-blue-700 shadow-sm'
+                : 'text-gray-700 hover:bg-blue-50 hover:text-blue-800';
+            typeLabelClasses = isSelected ? 'text-blue-700' : 'text-blue-500';
+            indicatorClasses = 'border-blue-400';
+            break;
+        case 'LIST':
+            typeClasses = isSelected
+                ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-800';
+            typeLabelClasses = isSelected ? 'text-emerald-700' : 'text-emerald-500';
+            indicatorClasses = 'border-emerald-400';
+            break;
+        case 'GALLERY':
+            typeClasses = isSelected
+                ? 'bg-rose-50 text-rose-700 shadow-sm'
+                : 'text-gray-700 hover:bg-rose-50 hover:text-rose-800';
+            typeLabelClasses = isSelected ? 'text-rose-700' : 'text-rose-500';
+            indicatorClasses = 'border-rose-400';
+            break;
+        case 'REMINDER':
+            typeClasses = isSelected
+                ? 'bg-amber-50 text-amber-700 shadow-sm'
+                : 'text-gray-700 hover:bg-amber-50 hover:text-amber-800';
+            typeLabelClasses = isSelected ? 'text-amber-700' : 'text-amber-500';
+            indicatorClasses = 'border-amber-400';
+            break;
+        case 'PAYMENT':
+            typeClasses = isSelected
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-800';
+            typeLabelClasses = isSelected ? 'text-indigo-700' : 'text-indigo-500';
+            indicatorClasses = 'border-indigo-400';
+            break;
+        case 'FOLDER':
+            typeClasses = isSelected
+                ? 'bg-slate-50 text-slate-800 shadow-sm'
+                : 'text-gray-700 hover:bg-slate-50 hover:text-slate-900';
+            typeLabelClasses = isSelected ? 'text-slate-800' : 'text-slate-500';
+            indicatorClasses = 'border-slate-400';
+            break;
+        default:
+            typeClasses = isSelected
+                ? 'bg-gray-50 text-gray-800 shadow-sm'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900';
+            typeLabelClasses = isSelected ? 'text-gray-800' : 'text-gray-500';
+            indicatorClasses = 'border-gray-300';
+    }
+
+    useEffect(() => {
+        if (!isFolder) return;
+        const shouldBeExpanded = isSelected || isAncestorOfSelected();
+        if (shouldBeExpanded !== isExpanded) {
+            setIsExpanded(shouldBeExpanded);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSection, allSections, isFolder, isSelected]);
 
     const handleClick = () => {
         onSelect(section);
-        if (isFolder && !isExpanded) {
-            setIsExpanded(true);
-        }
-    };
-
-    const getIcon = () => {
-        const size = 18;
-        switch (section.type) {
-            case 'NOTE': return <FileText size={size} />;
-            case 'LIST': return <ListChecks size={size} />;
-            case 'GALLERY': return <Image size={size} />;
-            case 'FOLDER': return isExpanded ? <FolderOpen size={size} /> : <Folder size={size} />;
-            case 'REMINDER': return <Clock size={size} />;
-            case 'PAYMENT': return <ListChecks size={size} />;
-            default: return <File size={size} />;
+        if (isFolder) {
+            setIsExpanded(prev => !prev);
         }
     };
 
     return (
-        <div>
+        <div className="my-1">
             <div
-                className={`group flex items-center px-3 py-2 cursor-pointer text-sm font-medium transition-all duration-200 rounded-md mx-1 my-0.5
-                    ${isSelected ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
-                `}
-                style={{ paddingLeft: `${depth * 12 + 12}px` }}
+                className={`group flex items-center justify-between px-2 py-2 cursor-pointer text-sm font-medium transition-all duration-200 rounded-r-md border-l-4 ${indicatorClasses} ${typeClasses}`}
+                style={{ marginLeft: depth * 12 }}
                 onClick={handleClick}
             >
 
-                {/* Arrow for folders */}
-                <span
-                    className={`mr-1 text-gray-400 hover:text-gray-700 w-4 h-4 flex items-center justify-center`}
-                    onClick={isFolder ? handleToggle : undefined}
-                >
-                    {isFolder && (
-                        isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />
-                    )}
-                </span>
+                <div className="flex items-center gap-1 min-w-0">
+                    <span className="truncate pl-1">{section.title}</span>
+                </div>
 
-                <span className={`mr-2 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {getIcon()}
-                </span>
-                <span className="truncate">{section.title}</span>
+                {section.type === 'FOLDER' ? (
+                    <button
+                        type="button"
+                        className="ml-2 inline-flex items-center justify-center h-6 w-6 rounded-full text-gray-400 hover:text-gray-700 hover:bg-white/60"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsExpanded(!isExpanded);
+                        }}
+                    >
+                        <ChevronRight size={14} className={isExpanded ? 'transform rotate-90 transition-transform' : 'transition-transform'} />
+                    </button>
+                ) : (
+                    <span className={`ml-2 text-[10px] uppercase tracking-wide flex-shrink-0 ${typeLabelClasses}`}>
+                        {section.type === 'NOTE' && 'Notes'}
+                        {section.type === 'LIST' && 'List'}
+                        {section.type === 'GALLERY' && 'Files'}
+                        {section.type === 'REMINDER' && 'Reminders'}
+                        {section.type === 'PAYMENT' && 'Expenses'}
+                    </span>
+                )}
             </div>
 
             {/* Recursive Children */}
