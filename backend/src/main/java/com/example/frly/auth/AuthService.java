@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+
 import static com.example.frly.constants.LogConstants.*;
 
 @Slf4j
@@ -26,6 +29,8 @@ public class AuthService {
     private final EmailService emailService;
     private final UserMapper userMapper;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final SecureRandom random = new SecureRandom();
+
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
@@ -99,7 +104,6 @@ public class AuthService {
     }
 
     private String generateRandomToken() {
-        java.security.SecureRandom random = new java.security.SecureRandom();
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -107,7 +111,7 @@ public class AuthService {
 
     private String sha256(String value) {
         try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             StringBuilder hex = new StringBuilder(hash.length * 2);
             for (byte b : hash) {

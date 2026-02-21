@@ -1,6 +1,7 @@
 package com.example.frly.section.model;
 
 import com.example.frly.common.GroupAwareEntity;
+import com.example.frly.common.enums.RecordStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,4 +40,8 @@ public class GalleryItem extends GroupAwareEntity {
 
     @Column(name = "content_type")
     private String contentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecordStatus status = RecordStatus.ACTIVE;
 }

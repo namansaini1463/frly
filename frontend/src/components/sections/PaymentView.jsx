@@ -352,13 +352,32 @@ const PaymentView = ({ sectionId }) => {
                                     <p className="text-[11px] text-gray-500 mb-1">
                                         Paid by {exp.paidByFirstName} {exp.paidByLastName}
                                     </p>
-                                    <ul className="text-[11px] text-gray-600 space-y-0.5">
-                                        {exp.shares?.map(s => (
-                                            <li key={s.userId}>
-                                                {s.firstName} {s.lastName} owes {s.shareAmount?.toFixed(2)} {exp.currency}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    {(() => {
+                                        const shares = Array.isArray(exp.shares) ? exp.shares : [];
+                                        const amount = exp.totalAmount || 0;
+                                        const isPayerOnly =
+                                            shares.length === 1 &&
+                                            shares[0].userId === exp.paidByUserId &&
+                                            Math.abs((shares[0].shareAmount || 0) - amount) < 0.01;
+
+                                        if (isPayerOnly) {
+                                            return (
+                                                <p className="text-[11px] text-gray-400">
+                                                    No split  personal expense only.
+                                                </p>
+                                            );
+                                        }
+
+                                        return (
+                                            <ul className="text-[11px] text-gray-600 space-y-0.5">
+                                                {shares.map(s => (
+                                                    <li key={s.userId}>
+                                                        {s.firstName} {s.lastName} owes {s.shareAmount?.toFixed(2)} {exp.currency}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        );
+                                    })()}
                                     <div className="mt-2 flex justify-end gap-2 text-[11px]">
                                         <button
                                             type="button"

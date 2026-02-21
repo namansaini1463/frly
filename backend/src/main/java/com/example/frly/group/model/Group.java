@@ -1,17 +1,18 @@
 package com.example.frly.group.model;
 
+import com.example.frly.common.AuditableEntity;
+import com.example.frly.common.enums.RecordStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "groups", schema = "config")
 @Getter
 @Setter
-public class Group {
+public class Group extends AuditableEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,8 +24,9 @@ public class Group {
     @Column(name = "display_name", nullable = false)
     private String displayName;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private RecordStatus status;
 
     @Column(name = "invite_code", nullable = false, unique = true)
     private String inviteCode;
@@ -34,7 +36,4 @@ public class Group {
 
     @Column(name = "storage_usage", nullable = false)
     private Long storageUsage = 0L;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 }

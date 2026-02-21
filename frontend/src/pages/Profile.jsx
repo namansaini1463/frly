@@ -130,13 +130,16 @@ const Profile = () => {
     };
 
     const handleSendResetEmail = async () => {
-        try {
-            await axiosClient.post('/auth/forgot-password', { email: form.email });
-            toast.success('Password reset email sent');
-        } catch (error) {
-            console.error('Failed to send reset email', error);
-            toast.error('Failed to send reset email');
-        }
+        if (!form.email) return;
+
+        await toast.promise(
+            axiosClient.post('/auth/forgot-password', { email: form.email }),
+            {
+                pending: 'Sending password reset email…',
+                success: 'Password reset email sent',
+                error: 'Failed to send reset email',
+            }
+        );
     };
 
     if (loading) {

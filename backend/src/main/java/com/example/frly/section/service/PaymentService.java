@@ -1,6 +1,7 @@
 package com.example.frly.section.service;
 
 import com.example.frly.auth.AuthUtil;
+import com.example.frly.common.enums.RecordStatus;
 import com.example.frly.common.exception.BadRequestException;
 import com.example.frly.group.GroupContext;
 import com.example.frly.group.service.GroupService;
@@ -97,7 +98,7 @@ public class PaymentService {
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
         PaymentExpense expense = paymentExpenseRepository.findById(expenseId)
-                .orElseThrow(() -> new BadRequestException("Expense not found"));
+            .orElseThrow(() -> new BadRequestException("Expense not found"));
 
         if (!expense.getSection().getId().equals(sectionId)) {
             throw new BadRequestException("Expense does not belong to this section");
@@ -131,7 +132,7 @@ public class PaymentService {
         expense.setExpenseDate(request.getExpenseDate());
 
         // Replace all existing shares for this expense
-        java.util.List<PaymentShare> existing = paymentShareRepository.findByExpenseId(expenseId);
+        List<PaymentShare> existing = paymentShareRepository.findByExpenseIdAndStatusNot(expenseId, RecordStatus.DELETED);
         paymentShareRepository.deleteAll(existing);
 
         for (CreatePaymentExpenseRequestDto.ShareInput shareInput : request.getShares()) {
@@ -155,15 +156,16 @@ public class PaymentService {
             throw new BadRequestException("Expense does not belong to this section");
         }
 
-        paymentExpenseRepository.delete(expense);
+        expense.setStatus(com.example.frly.common.enums.RecordStatus.DELETED);
+        paymentExpenseRepository.save(expense);
     }
 
     @Transactional(readOnly = true)
     public List<PaymentExpenseDto> getExpenses(Long sectionId) {
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
-        List<PaymentExpense> expenses = paymentExpenseRepository.findBySectionIdOrderByExpenseDateDesc(sectionId);
-        List<PaymentShare> allShares = paymentShareRepository.findByExpenseSectionId(sectionId);
+        List<PaymentExpense> expenses = paymentExpenseRepository.findBySectionIdAndStatusNotOrderByExpenseDateDesc(sectionId, com.example.frly.common.enums.RecordStatus.DELETED);
+        List<PaymentShare> allShares = paymentShareRepository.findByExpenseSectionIdAndStatusNot(sectionId, com.example.frly.common.enums.RecordStatus.DELETED);
 
         Map<Long, List<PaymentShare>> sharesByExpense = allShares.stream()
             .collect(Collectors.groupingBy(share -> share.getExpense().getId()));
@@ -202,8 +204,8 @@ public class PaymentService {
     public List<PaymentBalanceDto> getBalances(Long sectionId) {
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
-        List<PaymentExpense> expenses = paymentExpenseRepository.findBySectionIdOrderByExpenseDateDesc(sectionId);
-        List<PaymentShare> allShares = paymentShareRepository.findByExpenseSectionId(sectionId);
+        List<PaymentExpense> expenses = paymentExpenseRepository.findBySectionIdAndStatusNotOrderByExpenseDateDesc(sectionId, com.example.frly.common.enums.RecordStatus.DELETED);
+        List<PaymentShare> allShares = paymentShareRepository.findByExpenseSectionIdAndStatusNot(sectionId, com.example.frly.common.enums.RecordStatus.DELETED);
 
         Map<Long, List<PaymentShare>> sharesByExpense = allShares.stream()
             .collect(Collectors.groupingBy(share -> share.getExpense().getId()));

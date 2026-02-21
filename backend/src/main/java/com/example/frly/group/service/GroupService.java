@@ -11,6 +11,7 @@ import com.example.frly.auth.AuthUtil;
 import com.example.frly.common.Role;
 import com.example.frly.common.RoleRepository;
 import com.example.frly.group.enums.GroupMemberStatus;
+import com.example.frly.common.enums.RecordStatus;
 import com.example.frly.user.User;
 import com.example.frly.user.UserRepository;
 import com.example.frly.group.repository.GroupRepository;
@@ -26,7 +27,6 @@ import com.example.frly.common.exception.BadRequestException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -43,7 +43,7 @@ public class GroupService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ123456789";
     private static final int CODE_LENGTH = 8;
     private static final SecureRandom random = new SecureRandom();
 
@@ -56,8 +56,7 @@ public class GroupService {
         // 1. Create and Save Group
         Group group = new Group();
         group.setDisplayName(request.getDisplayName());
-        group.setStatus("ACTIVE");
-        group.setCreatedAt(LocalDateTime.now());
+        group.setStatus(RecordStatus.ACTIVE);
 
         // Generate simple 8-char invite code
         String inviteCode = generateInviteCode();
@@ -99,7 +98,11 @@ public class GroupService {
         User user = userRepository.getReferenceById(userId);
 
         Group group = groupRepository.findByInviteCode(request.getInviteCode())
-                .orElseThrow(() -> new BadRequestException("Invalid invite code"));
+            .orElseThrow(() -> new BadRequestException("Invalid invite code"));
+
+        if (group.getStatus() != RecordStatus.ACTIVE) {
+            throw new BadRequestException("Group is not active");
+        }
 
         if (groupMemberRepository.existsByUserIdAndGroupId(userId, group.getId())) {
             throw new BadRequestException("You are already a member or have a pending request");
@@ -196,9 +199,9 @@ public class GroupService {
            groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
                .ifPresent(member -> {
                   dto.setCurrentUserRole(member.getRole().getName());
-                  dto.setMembershipStatus(member.getStatus().name());
+                  dto.setMembershipStatus(member.getStatus());
                   if (member.getViewPreference() != null) {
-                      dto.setViewPreference(member.getViewPreference().name());
+                      dto.setViewPreference(member.getViewPreference());
                   }
                });
 
@@ -213,6 +216,9 @@ public class GroupService {
         return groupMemberRepository.findByUserId(userId).stream()
                 .map(member -> {
                     Group group = member.getGroup();
+                    if (group.getStatus() == RecordStatus.DELETED) {
+                        return null;
+                    }
                     GroupResponseDto dto = new com.example.frly.group.dto.GroupResponseDto();
                     dto.setId(group.getId());
 //                    dto.setName(group.getName());
@@ -223,17 +229,61 @@ public class GroupService {
                     dto.setCreatedAt(group.getCreatedAt());
                     dto.setStatus(group.getStatus());
                     dto.setCurrentUserRole(member.getRole().getName());
-                    dto.setMembershipStatus(member.getStatus().name());
+                    dto.setMembershipStatus(member.getStatus());
 
                     if (member.getViewPreference() != null) {
-                        dto.setViewPreference(member.getViewPreference().name());
+                        dto.setViewPreference(member.getViewPreference());
                     }
 
                     long pendingCount = groupMemberRepository.countByGroupIdAndStatus(group.getId(), GroupMemberStatus.PENDING);
                     dto.setPendingMemberCount(pendingCount);
                     return dto;
                 })
+                .filter(java.util.Objects::nonNull)
+                .sorted((a, b) -> {
+                    if (a.getDisplayName() == null || b.getDisplayName() == null) {
+                        return 0;
+                    }
+                    return a.getDisplayName().compareToIgnoreCase(b.getDisplayName());
+                })
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public com.example.frly.group.dto.GroupResponseDto updateGroup(Long groupId, com.example.frly.group.dto.UpdateGroupRequestDto request) {
+        Long currentUserId = AuthUtil.getCurrentUserId();
+        validateAdminAccess(currentUserId, groupId);
+
+        if (request == null || (request.getDisplayName() == null || request.getDisplayName().trim().isEmpty())) {
+            throw new BadRequestException("Nothing to update");
+        }
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new BadRequestException("Group not found"));
+
+        if (group.getStatus() == RecordStatus.DELETED) {
+            throw new BadRequestException("Cannot update a deleted group");
+        }
+
+        if (request.getDisplayName() != null && !request.getDisplayName().trim().isEmpty()) {
+            group.setDisplayName(request.getDisplayName().trim());
+        }
+
+        groupRepository.save(group);
+
+        return getGroupDetails(groupId);
+    }
+
+    @Transactional
+    public void deleteGroup(Long groupId) {
+        Long currentUserId = AuthUtil.getCurrentUserId();
+        validateAdminAccess(currentUserId, groupId);
+
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new BadRequestException("Group not found"));
+
+        group.setStatus(RecordStatus.DELETED);
+        groupRepository.save(group);
     }
 
 
@@ -290,7 +340,7 @@ public class GroupService {
                     dto.setFirstName(member.getUser().getFirstName());
                     dto.setLastName(member.getUser().getLastName());
                     dto.setEmail(member.getUser().getEmail());
-                    dto.setStatus(member.getStatus().name());
+                    dto.setStatus(member.getStatus());
                     return dto;
                 })
                 .collect(java.util.stream.Collectors.toList());
@@ -310,9 +360,26 @@ public class GroupService {
                     dto.setLastName(member.getUser().getLastName());
                     dto.setEmail(member.getUser().getEmail());
                     dto.setRole(member.getRole().getName());
+                    dto.setPfpUrl(member.getUser().getPfpUrl());
                     return dto;
                 })
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
+    public void removeMember(Long groupId, Long userIdToRemove) {
+        Long currentUserId = AuthUtil.getCurrentUserId();
+        validateAdminAccess(currentUserId, groupId);
+
+        if (currentUserId.equals(userIdToRemove)) {
+            throw new BadRequestException("You cannot remove yourself from the group");
+        }
+
+        GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userIdToRemove, groupId)
+                .orElseThrow(() -> new BadRequestException("Member not found in this group"));
+
+        member.setStatus(GroupMemberStatus.REMOVED);
+        groupMemberRepository.save(member);
     }
 
     @Transactional(readOnly = true)

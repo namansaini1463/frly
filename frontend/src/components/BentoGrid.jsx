@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const BentoGrid = ({ sections, previews, allSections, groupId }) => {
+const BentoGrid = ({ sections, previews, allSections, groupId, onOpenCreateModal }) => {
     const navigate = useNavigate();
 
     return (
@@ -28,20 +28,36 @@ const BentoGrid = ({ sections, previews, allSections, groupId }) => {
 
                 const preview = previews[section.id];
 
+                const isFolder = section.type === 'FOLDER';
+
                 return (
                     <button
                         key={section.id}
                         type="button"
-                        onClick={() => navigate(`/groups/${groupId}/sections/${section.id}`)}
+                        onClick={() => navigate(`/groups/${groupId}/sections/${section.id}?from=BENTO`)}
                         className="text-left bg-white rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition p-4 flex flex-col justify-between min-h-[120px] group"
                     >
                         <div className="flex items-start justify-between mb-2 w-full">
                             <h3 className="text-sm font-semibold text-gray-900 truncate mr-2 w-full">
                                 {section.title}
                             </h3>
-                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shrink-0 ${typeBadgeClass}`}>
-                                {typeLabel}
-                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${typeBadgeClass}`}>
+                                    {typeLabel}
+                                </span>
+                                {isFolder && onOpenCreateModal && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenCreateModal(section.id);
+                                        }}
+                                        className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                                    >
+                                        + Inside
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="mt-1 text-[11px] text-gray-500 flex-1 min-h-[40px] w-full">
@@ -111,9 +127,9 @@ const BentoGrid = ({ sections, previews, allSections, groupId }) => {
                                 </div>
                             ) : preview?.kind === 'PAYMENT' ? (
                                 <div className="flex flex-col gap-1">
-                                    <p className="text-xs text-gray-500">Your Balance:</p>
-                                    <p className={`text-lg font-bold ${preview.balance > 0 ? 'text-emerald-600' : preview.balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                        {preview.balance > 0 ? '+' : ''}{preview.balance.toFixed(2)}
+                                    <p className="text-xs text-gray-500">Group Expenses:</p>
+                                    <p className="text-lg font-bold text-gray-800">
+                                        {preview.totalSpent?.toFixed(2) || '0.00'}
                                     </p>
                                 </div>
                             ) : (

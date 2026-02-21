@@ -1,15 +1,14 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
-import BentoGrid from '../BentoGrid';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSectionPreviews } from '../../hooks/useSectionPreviews';
 
-const FolderView = ({ sectionId, allSections, onOpenCreateModal }) => {
+const FolderView = ({ sectionId, allSections, onOpenCreateModal, onSelectSection }) => {
     const { groupId } = useParams();
-
+    const navigate = useNavigate();
     // Filter sections that have this folder as their parent
     const childSections = allSections.filter(s => s.parentId === sectionId);
 
-    // Load previews for these children
+    // Load previews for these children (notes, lists, reminders, etc.)
     const previews = useSectionPreviews(childSections);
 
     if (childSections.length === 0) {
@@ -18,32 +17,123 @@ const FolderView = ({ sectionId, allSections, onOpenCreateModal }) => {
                 <p className="text-gray-400 mb-4">This folder is empty</p>
                 <button
                     onClick={() => onOpenCreateModal(sectionId)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-medium"
                 >
-                    + Create Item Inside
+                    + Create item inside
                 </button>
             </div>
         );
     }
 
     return (
-        <div className='p-4'>
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Folder Contents</h2>
+        <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-sm font-semibold text-gray-800">Folder contents</h2>
                 <button
                     onClick={() => onOpenCreateModal(sectionId)}
-                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition text-sm font-medium"
+                    className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition text-xs font-medium"
                 >
-                    + Add New
+                    + Add inside
                 </button>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {childSections.map(child => {
+                    const preview = previews[child.id];
 
-            <BentoGrid
-                sections={childSections}
-                previews={previews}
-                allSections={allSections}
-                groupId={groupId}
-            />
+                    const typeLabel = child.type === 'NOTE' ? 'Notes'
+                        : child.type === 'LIST' ? 'Lists'
+                            : child.type === 'GALLERY' ? 'Files'
+                                : child.type === 'REMINDER' ? 'Reminders'
+                                    : child.type === 'PAYMENT' ? 'Payments'
+                                        : 'Folder';
+
+                    const typeBadgeClass = child.type === 'NOTE' ? 'bg-blue-50 text-blue-700'
+                        : child.type === 'LIST' ? 'bg-emerald-50 text-emerald-700'
+                            : child.type === 'GALLERY' ? 'bg-rose-50 text-rose-700'
+                                : child.type === 'REMINDER' ? 'bg-amber-50 text-amber-700'
+                                    : child.type === 'PAYMENT' ? 'bg-purple-50 text-purple-700'
+                                        : 'bg-gray-100 text-gray-700';
+
+                    const childrenCount = allSections.filter(s => s.parentId === child.id).length;
+
+                    const handleClick = () => {
+                        if (onSelectSection) {
+                            onSelectSection(child);
+                        } else {
+                            navigate(`/groups/${groupId}/sections/${child.id}`);
+                        }
+                    };
+
+                    return (
+                        <button
+                            key={child.id}
+                            type="button"
+                            onClick={handleClick}
+                            className="text-left bg-white rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transition p-4 flex flex-col justify-between min-h-[120px] group"
+                        >
+                            <div className="flex items-start justify-between mb-2 w-full">
+                                <h3 className="text-sm font-semibold text-gray-900 truncate mr-2 w-full">
+                                    {child.title}
+                                </h3>
+                                <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${typeBadgeClass}`}>
+                                    {typeLabel}
+                                </span>
+                            </div>
+                            <div className="mt-1 text-[11px] text-gray-500 flex-1 min-h-[40px] w-full">
+                                {!preview && child.type !== 'FOLDER' ? (
+                                    <span className="text-gray-400">Loading...</span>
+                                ) : preview?.kind === 'NOTE' ? (
+                                    <p className="text-[10px] text-gray-600 leading-snug max-h-12 overflow-hidden line-clamp-2 break-words">
+                                        {preview.snippet || 'Empty note'}
+                                    </p>
+                                ) : preview?.kind === 'LIST' ? (
+                                    <ul className="space-y-0.5 max-h-12 overflow-hidden">
+                                        {preview.items?.length ? preview.items.map((item, idx) => (
+                                            <li key={idx} className="flex items-center gap-1">
+                                                <span className={`inline-block w-2 h-2 rounded-full ${item.completed ? 'bg-emerald-400' : 'bg-gray-300'}`} />
+                                                <span className="truncate">{item.text}</span>
+                                            </li>
+                                        )) : (
+                                            <li className="text-gray-400">No items yet</li>
+                                        )}
+                                    </ul>
+                                ) : preview?.kind === 'REMINDER' ? (
+                                    <ul className="space-y-1 max-h-12 overflow-hidden">
+                                        {preview.reminders?.length ? preview.reminders.map((r, idx) => (
+                                            <li key={idx} className={`flex items-center justify-between text-[9px] ${r.isSent ? 'opacity-50' : ''}`}>
+                                                <span className={`truncate font-medium ${r.isSent ? 'text-gray-500 line-through' : 'text-gray-700'}`}>{r.title}</span>
+                                            </li>
+                                        )) : (
+                                            <li className="text-gray-400">No active reminders</li>
+                                        )}
+                                    </ul>
+                                ) : preview?.kind === 'GALLERY' ? (
+                                    <div className="flex gap-1 overflow-hidden h-8">
+                                        {preview.images?.length ? preview.images.slice(0, 3).map((img, idx) => (
+                                            img.type?.startsWith('image/') ? (
+                                                <img key={idx} src={img.url} alt="" className="h-8 w-8 object-cover rounded-md border border-gray-100" />
+                                            ) : (
+                                                <div key={idx} className="h-8 w-8 bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center text-gray-400 text-[8px]">FILE</div>
+                                            )
+                                        )) : (
+                                            <span className="text-gray-400 flex items-center h-full">No files</span>
+                                        )}
+                                    </div>
+                                ) : preview?.kind === 'PAYMENT' ? (
+                                    <p className={`text-sm font-semibold ${preview.balance > 0 ? 'text-emerald-600' : preview.balance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                                        {preview.balance > 0 ? '+' : ''}{preview.balance.toFixed(2)}
+                                    </p>
+                                ) : (
+                                    <div className="text-gray-500 flex items-center gap-2 text-[10px]">
+                                        <span className="bg-gray-100 px-2 py-0.5 rounded-full">{childrenCount}</span>
+                                        <span>items inside</span>
+                                    </div>
+                                )}
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 };

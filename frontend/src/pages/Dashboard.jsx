@@ -36,8 +36,13 @@ const Dashboard = () => {
         navigate(`/groups/${group.id}`);
     };
 
+    const handleManageGroup = (group, event) => {
+        event.stopPropagation();
+        navigate(`/groups/${group.id}?manage=1`);
+    };
+
     if (loading) return (
-        <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="flex justify-center items-center h-[60vh]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
     );
@@ -47,23 +52,23 @@ const Dashboard = () => {
     const pendingGroups = groups.filter(g => g.membershipStatus === 'PENDING').length;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
+        <div className="min-h-full">
             <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Your Groups</h1>
-                        <p className="text-sm text-gray-500 mt-1">Overview of groups you own or are a member of.</p>
+                        <h1 className="text-xl font-semibold text-gray-900">Your Groups</h1>
+                        <p className="text-xs text-gray-500 mt-1">Overview of groups you own or are a member of.</p>
                     </div>
-                    <div className="space-x-4">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => navigate('/groups/join')}
-                            className="px-3 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition shadow-sm"
+                            className="px-3 py-1.5 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 text-xs font-medium transition"
                         >
                             Join Group
                         </button>
                         <button
                             onClick={() => navigate('/groups/create')}
-                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition shadow-sm"
+                            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium transition"
                         >
                             Create Group
                         </button>
@@ -109,11 +114,22 @@ const Dashboard = () => {
                                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border border-transparent hover:border-blue-200 overflow-hidden"
                             >
                                 <div className="p-6">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-lg capitalize font-bold text-gray-800">{group.displayName}</h3>
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase">
-                                            {group.currentUserRole || 'MEMBER'}
-                                        </span>
+                                    <div className="flex items-center justify-between mb-2 gap-2">
+                                        <h3 className="text-lg capitalize font-bold text-gray-800 truncate">{group.displayName}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase">
+                                                {group.currentUserRole || 'MEMBER'}
+                                            </span>
+                                            {group.currentUserRole === 'ADMIN' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleManageGroup(group, e)}
+                                                    className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                                                >
+                                                    Manage
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="flex items-center text-xs text-gray-500 mb-4 gap-2 flex-wrap">
                                         {group.membershipStatus === 'PENDING' ? (

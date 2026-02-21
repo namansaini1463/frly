@@ -1,6 +1,7 @@
 package com.example.frly.config;
 
 import com.example.frly.auth.JwtAuthenticationFilter;
+import com.example.frly.group.GroupContextFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final com.example.frly.group.GroupContextFilter groupContextFilter;
+    private final GroupContextFilter groupContextFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {

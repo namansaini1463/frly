@@ -86,7 +86,7 @@ public class GalleryService {
 
     public List<GalleryItem> getItems(Long sectionId) {
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
-        return galleryItemRepository.findBySectionIdOrderByCreatedAtDesc(sectionId);
+        return galleryItemRepository.findBySectionIdAndStatusNotOrderByCreatedAtDesc(sectionId, com.example.frly.common.enums.RecordStatus.DELETED);
     }
 
     @Transactional
@@ -102,8 +102,9 @@ public class GalleryService {
         // 1. Delete from Storage
         fileStorageService.deleteFile(item.getPublicId());
 
-        // 2. Delete Entity
-        galleryItemRepository.delete(item);
+        // 2. Soft-delete Entity (keep record, free storage)
+        item.setStatus(com.example.frly.common.enums.RecordStatus.DELETED);
+        galleryItemRepository.save(item);
 
         // 3. Update Usage (Decrement)
         Group group = groupRepository.findById(groupId).orElseThrow();

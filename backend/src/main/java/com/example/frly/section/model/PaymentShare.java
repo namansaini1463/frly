@@ -1,6 +1,7 @@
 package com.example.frly.section.model;
 
 import com.example.frly.common.GroupAwareEntity;
+import com.example.frly.common.enums.RecordStatus;
 import com.example.frly.user.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -28,4 +29,8 @@ public class PaymentShare extends GroupAwareEntity {
 
     @Column(name = "share_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal shareAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecordStatus status = RecordStatus.ACTIVE;
 }

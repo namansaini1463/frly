@@ -1,5 +1,6 @@
 package com.example.frly.section.service;
 
+import com.example.frly.common.enums.RecordStatus;
 import com.example.frly.section.dto.CreateListItemRequestDto;
 import com.example.frly.section.dto.CreateSectionRequestDto;
 import com.example.frly.section.dto.ListItemDto;
@@ -83,9 +84,28 @@ public class SectionService {
         // Security Check
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
-        return sectionRepository.findAllByOrderByPositionAsc().stream()
+        return sectionRepository.findByStatusNotOrderByPositionAsc(RecordStatus.DELETED).stream()
                 .map(sectionMapper::toSectionDto)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteSection(Long sectionId) {
+        // Security Check
+        groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
+
+        deleteSectionRecursively(sectionId);
+    }
+
+    private void deleteSectionRecursively(Long sectionId) {
+        java.util.List<Section> children = sectionRepository.findByParentSectionIdAndStatusNot(sectionId, RecordStatus.DELETED);
+        for (Section child : children) {
+            deleteSectionRecursively(child.getId());
+        }
+
+        Section section = sectionRepository.findById(sectionId).orElseThrow();
+        section.setStatus(RecordStatus.DELETED);
+        sectionRepository.save(section);
     }
 
     // --- LIST ITEMS ---
@@ -117,7 +137,7 @@ public class SectionService {
         // Security Check
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
-        return listItemRepository.findBySectionIdOrderByPositionAsc(sectionId).stream()
+        return listItemRepository.findBySectionIdAndStatusNotOrderByPositionAsc(sectionId, RecordStatus.DELETED).stream()
                 .map(sectionMapper::toListItemDto)
                 .collect(Collectors.toList());
     }
@@ -170,15 +190,19 @@ public class SectionService {
         }
 
         note.setContent(request.getContent());
-        note = noteRepository.save(note);
+        noteRepository.save(note);
         log.info(NOTE_UPDATED, sectionId);
 
-        NoteDto dto = sectionMapper.toNoteDto(note);
-        dto.setVersion(note.getVersion());
-        dto.setLastEditedAt(note.getUpdatedAt());
+        // Reload to ensure auditing fields like updatedAt/updatedBy are up to date
+        Note refreshed = noteRepository.findBySectionId(sectionId)
+            .orElseThrow(() -> new RuntimeException("Note not found for section " + sectionId));
 
-        if (note.getUpdatedBy() != null) {
-            userRepository.findById(note.getUpdatedBy()).ifPresent(user -> {
+        NoteDto dto = sectionMapper.toNoteDto(refreshed);
+        dto.setVersion(refreshed.getVersion());
+        dto.setLastEditedAt(refreshed.getUpdatedAt());
+
+        if (refreshed.getUpdatedBy() != null) {
+            userRepository.findById(refreshed.getUpdatedBy()).ifPresent(user -> {
                 String name = (user.getFirstName() != null ? user.getFirstName() : "")
                     + (user.getLastName() != null ? (" " + user.getLastName()) : "");
                 dto.setLastEditedByName(name.trim().isEmpty() ? user.getEmail() : name.trim());
@@ -220,7 +244,7 @@ public class SectionService {
         // Security Check
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
 
-        return reminderRepository.findBySectionIdOrderByTriggerTimeAsc(sectionId).stream()
+        return reminderRepository.findBySectionIdAndStatusNotOrderByTriggerTimeAsc(sectionId, RecordStatus.DELETED).stream()
                 .map(sectionMapper::toReminderDto)
                 .collect(Collectors.toList());
     }
@@ -229,7 +253,10 @@ public class SectionService {
     public void deleteReminder(Long reminderId) {
         // Security Check
         groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
-        reminderRepository.deleteById(reminderId);
+        Reminder reminder = reminderRepository.findById(reminderId)
+                .orElseThrow(() -> new RuntimeException("Reminder not found"));
+        reminder.setStatus(RecordStatus.DELETED);
+        reminderRepository.save(reminder);
     }
 
     @Transactional

@@ -28,6 +28,8 @@ const GalleryView = ({ sectionId }) => {
     // Menu state: { itemId: number | null }
     const [openMenuId, setOpenMenuId] = useState(null);
     const menuRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragCounter = useRef(0);
 
     useEffect(() => {
         fetchImages();
@@ -52,15 +54,14 @@ const GalleryView = ({ sectionId }) => {
         }
     };
 
-    const handleUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
+    const uploadFiles = async (files) => {
+        const fileArray = Array.from(files || []);
+        if (fileArray.length === 0) return;
         setUploading(true);
         let successCount = 0;
         let failCount = 0;
 
-        for (const file of files) {
+        for (const file of fileArray) {
             const formData = new FormData();
             formData.append('file', file);
             try {
@@ -79,7 +80,44 @@ const GalleryView = ({ sectionId }) => {
 
         fetchImages();
         setUploading(false);
+    };
+
+    const handleUpload = async (e) => {
+        await uploadFiles(e.target.files);
         e.target.value = '';
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDragging(false);
+        await uploadFiles(e.dataTransfer?.files);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'copy';
+        }
+        if (!isDragging) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        dragCounter.current += 1;
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDragging(false);
+        }
     };
 
     const handleDelete = async (itemId) => {
@@ -236,7 +274,14 @@ const GalleryView = ({ sectionId }) => {
     }, [previewItem]);
 
     return (
-        <div className="p-4" onClick={() => setOpenMenuId(null)}>
+        <div
+            className={`relative p-4 transition-colors ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}
+            onClick={() => setOpenMenuId(null)}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+        >
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Gallery & Files</h2>
                 <div className="relative">
@@ -250,7 +295,7 @@ const GalleryView = ({ sectionId }) => {
                     />
                     <label
                         htmlFor="gallery-upload"
-                        className={`cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`cursor-pointer px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center gap-1.5 text-sm ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         {uploading ? (
                             <>
@@ -259,24 +304,33 @@ const GalleryView = ({ sectionId }) => {
                             </>
                         ) : (
                             <>
-                                <UploadCloud size={18} /> Upload Files
+                                <UploadCloud size={16} /> Upload files
                             </>
                         )}
                     </label>
                 </div>
             </div>
 
+            {isDragging && (
+                <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-blue-50/70">
+                    <div className="w-full max-w-md border-2 border-dashed border-blue-500 bg-white/90 rounded-xl p-6 text-center text-sm text-blue-700 flex flex-col items-center gap-2 shadow-lg">
+                        <UploadCloud size={28} className="text-blue-500" />
+                        <p className="font-medium">Drop files to upload</p>
+                        <p className="text-xs text-blue-500/80">Or click the button above to browse</p>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map(img => (
                     <div
                         key={img.id}
-                        className="group relative bg-white border rounded-lg shadow-sm hover:shadow-md transition flex flex-col cursor-pointer"
-
+                        className="group relative bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-lg hover:border-blue-100 transition flex flex-col cursor-pointer"
+                        onClick={() => handleItemClick(img)}
                     >
                         {/* Preview Area */}
                         <div
-                            className="h-40 bg-gray-50 flex items-center justify-center overflow-hidden relative rounded-t-lg"
-                            onClick={() => handleItemClick(img)}
+                            className={`${img.contentType.startsWith('image/') ? 'h-40' : 'h-32'} bg-gray-50 flex items-center justify-center overflow-hidden relative rounded-t-lg`}
                         >
                             {img.contentType.startsWith('image/') ? (
                                 <img
@@ -296,7 +350,7 @@ const GalleryView = ({ sectionId }) => {
                         </div>
 
                         {/* Info / Actions */}
-                        <div className="p-3 bg-white flex-1 flex flex-col justify-between border-t relative rounded-b-lg">
+                        <div className="p-3 bg-white flex-1 flex flex-col justify-between border-t border-gray-100 relative rounded-b-lg">
                             {renamingId === img.id ? (
                                 <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
                                     <input
