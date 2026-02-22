@@ -83,7 +83,7 @@ const NoteView = ({ sectionId }) => {
     if (loading) return <div className="p-4 text-sm text-gray-500">Loading note...</div>;
 
     return (
-        <div className="h-full flex flex-col p-4">
+        <div className="h-full flex flex-col sm:p-4">
             <div className="flex justify-between items-center mb-3">
                 <div>
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">Note</h2>

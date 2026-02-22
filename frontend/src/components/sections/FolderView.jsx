@@ -14,37 +14,41 @@ const FolderView = ({ sectionId, allSections, onOpenCreateModal, onSelectSection
     if (childSections.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg shadow-sm h-64">
-                <p className="text-gray-400 mb-4">This folder is empty</p>
-                <button
-                    onClick={() => onOpenCreateModal(sectionId)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-medium"
-                >
-                    + Create item inside
-                </button>
+                <p className="text-gray-400 mb-2">This folder is empty</p>
+                {onOpenCreateModal && (
+                    <button
+                        onClick={() => onOpenCreateModal(sectionId)}
+                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                    >
+                        + Create item inside
+                    </button>
+                )}
             </div>
         );
     }
 
     return (
-        <div className="p-4">
+        <div className="sm:p-4">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-sm font-semibold text-gray-800">Folder contents</h2>
-                <button
-                    onClick={() => onOpenCreateModal(sectionId)}
-                    className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition text-xs font-medium"
-                >
-                    + Add inside
-                </button>
+                {onOpenCreateModal && (
+                    <button
+                        onClick={() => onOpenCreateModal(sectionId)}
+                        className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition text-xs font-medium"
+                    >
+                        + Add inside
+                    </button>
+                )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {childSections.map(child => {
                     const preview = previews[child.id];
 
-                    const typeLabel = child.type === 'NOTE' ? 'Notes'
-                        : child.type === 'LIST' ? 'Lists'
+                    const typeLabel = child.type === 'NOTE' ? 'Note'
+                        : child.type === 'LIST' ? 'Checklist'
                             : child.type === 'GALLERY' ? 'Files'
-                                : child.type === 'REMINDER' ? 'Reminders'
-                                    : child.type === 'PAYMENT' ? 'Payments'
+                                : child.type === 'REMINDER' ? 'Reminder'
+                                    : child.type === 'PAYMENT' ? 'Expenses'
                                         : 'Folder';
 
                     const typeBadgeClass = child.type === 'NOTE' ? 'bg-blue-50 text-blue-700'

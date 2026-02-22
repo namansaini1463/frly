@@ -1,58 +1,50 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer className="mt-12 border-t border-gray-200 bg-white pt-10 pb-6">
+        <footer className="mt-10 border-t border-gray-200 bg-white pt-6 pb-4">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                    <div className="col-span-1 md:col-span-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6 text-sm">
+                    <div>
                         <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
                             FRYLY
                         </span>
-                        <p className="mt-4 text-xs text-gray-500 leading-relaxed">
+                        <p className="mt-3 text-xs text-gray-500 leading-relaxed max-w-xs">
                             Organise your shared spaces, notes, and reminders in one simple, beautiful place.
                         </p>
                     </div>
 
-                    <div>
-                        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Product</h4>
-                        <ul className="space-y-2 text-sm text-gray-500">
-                            <li><a href="#" className="hover:text-blue-600 transition">Features</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Integrations</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Pricing</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Changelog</a></li>
-                        </ul>
-                    </div>
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Product</h4>
+                            <ul className="space-y-2 text-sm text-gray-500">
+                                <li><Link to="/features" className="hover:text-blue-600 transition">Features</Link></li>
+                                <li><Link to="/integrations" className="hover:text-blue-600 transition">Integrations</Link></li>
+                                <li><Link to="/pricing" className="hover:text-blue-600 transition">Pricing</Link></li>
+                                <li><Link to="/changelog" className="hover:text-blue-600 transition">Changelog</Link></li>
+                            </ul>
+                        </div>
 
-                    <div>
-                        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Company</h4>
-                        <ul className="space-y-2 text-sm text-gray-500">
-                            <li><a href="#" className="hover:text-blue-600 transition">About</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Careers</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Blog</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Contact</a></li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Legal</h4>
-                        <ul className="space-y-2 text-sm text-gray-500">
-                            <li><a href="#" className="hover:text-blue-600 transition">Privacy</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Terms</a></li>
-                            <li><a href="#" className="hover:text-blue-600 transition">Security</a></li>
-                        </ul>
-                    </div>
+                        <div>
+                            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Company</h4>
+                            <ul className="space-y-2 text-sm text-gray-500">
+                                <li><Link to="/about" className="hover:text-blue-600 transition">About</Link></li>
+                                <li><Link to="/careers" className="hover:text-blue-600 transition">Careers</Link></li>
+                                <li><Link to="/blog" className="hover:text-blue-600 transition">Blog</Link></li>
+                                <li><Link to="/contact" className="hover:text-blue-600 transition">Contact</Link></li>
+                            </ul>
+                        </div>
                 </div>
 
-                <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="pt-4 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-3">
                     <p className="text-xs text-gray-400">
                         © {new Date().getFullYear()} FRYLY Inc. All rights reserved.
                     </p>
-                    <div className="flex space-x-4">
+                    <div className="flex space-x-3 text-gray-300 text-xs">
                         {/* Social placeholders */}
-                        <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
-                        <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
-                        <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
+                        <span>Twitter</span>
+                        <span>Instagram</span>
+                        <span>GitHub</span>
                     </div>
                 </div>
             </div>

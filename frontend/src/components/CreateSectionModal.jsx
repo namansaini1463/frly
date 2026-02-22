@@ -58,10 +58,10 @@ const CreateSectionModal = ({ onClose, onCreated, groupId, parentId = null }) =>
                             className="mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         >
                             <option value="NOTE">Note</option>
-                            <option value="LIST">List</option>
+                            <option value="LIST">Checklist</option>
                             <option value="GALLERY">Files</option>
                             <option value="REMINDER">Reminder</option>
-                            <option value="PAYMENT">Payments</option>
+                            <option value="PAYMENT">Expenses</option>
                             <option value="FOLDER">Folder</option>
                         </select>
                     </div>

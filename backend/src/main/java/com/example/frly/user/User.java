@@ -38,4 +38,7 @@ public class User extends AuditableEntity {
     @Column(name = "reminder_email_enabled", nullable = false)
     private boolean reminderEmailEnabled = true;
 
+    @Column(name = "font_preference")
+    private String fontPreference;
+
 }

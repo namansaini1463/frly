@@ -275,7 +275,7 @@ const GalleryView = ({ sectionId }) => {
 
     return (
         <div
-            className={`relative p-4 transition-colors ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}
+            className={`relative sm:p-4 transition-colors ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}
             onClick={() => setOpenMenuId(null)}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -283,7 +283,7 @@ const GalleryView = ({ sectionId }) => {
             onDragLeave={handleDragLeave}
         >
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Gallery & Files</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">Files</h2>
                 <div className="relative">
                     <input
                         type="file"

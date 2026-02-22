@@ -3,12 +3,14 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Routes, Route } from 'react-router-dom';
 import PublicRoute from './components/PublicRoute';
+import ScrollToTop from './ScrollToTop';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
+import GroupInvite from './pages/GroupInvite';
 import Dashboard from './pages/Dashboard';
 import CreateGroup from './pages/CreateGroup';
 import JoinGroup from './pages/JoinGroup';
@@ -17,6 +19,14 @@ import SectionView from './pages/SectionView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Profile from './pages/Profile';
 import MemberProfile from './pages/MemberProfile';
+import Features from './pages/Features';
+import Integrations from './pages/Integrations';
+import Pricing from './pages/Pricing';
+import Changelog from './pages/Changelog';
+import About from './pages/About';
+import Careers from './pages/Careers';
+import Blog from './pages/Blog';
+import Contact from './pages/Contact';
 
 function App() {
   return (
@@ -24,6 +34,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
       <Header />
       <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6">
+        <ScrollToTop />
         <Routes>
           <Route
             path="/"
@@ -57,6 +68,22 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route
+            path="/group-invite"
+            element={
+              <PublicRoute>
+                <GroupInvite />
+              </PublicRoute>
+            }
+          />
+          <Route path="/features" element={<Features />} />
+          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/changelog" element={<Changelog />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/contact" element={<Contact />} />
           {/* Dashboard is protected */}
           <Route
             path="/dashboard"

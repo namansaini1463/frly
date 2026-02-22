@@ -16,8 +16,9 @@ import GroupManageModal from '../components/GroupManageModal';
 import UserInfoModal from '../components/UserInfoModal';
 import { useSectionPreviews } from '../hooks/useSectionPreviews';
 import { toast } from 'react-toastify';
-import { Copy, Trash2, LayoutPanelLeft, LayoutGrid, Users, ArrowLeft } from 'lucide-react';
+import { Copy, Trash2, LayoutPanelLeft, LayoutGrid, Users, ArrowLeft, Check } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 
 const GroupView = () => {
     const { groupId } = useParams();
@@ -25,6 +26,7 @@ const GroupView = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const { currentGroup, loading: groupLoading } = useSelector((state) => state.group);
+    const { user } = useAuth();
 
     const [sections, setSections] = useState([]);
     const [selectedSection, setSelectedSection] = useState(null);
@@ -44,6 +46,8 @@ const GroupView = () => {
     const [confirmConfig, setConfirmConfig] = useState(null);
     const [showManageModal, setShowManageModal] = useState(false);
     const [selectedMemberForInfo, setSelectedMemberForInfo] = useState(null);
+
+    const [inviteCodeCopied, setInviteCodeCopied] = useState(false);
 
     const [viewMode, setViewMode] = useState('WORKSPACE'); // WORKSPACE | BENTO
 
@@ -319,6 +323,10 @@ const GroupView = () => {
         }
 
         navigate({ search: params.toString() ? `?${params.toString()}` : '' }, { replace: false });
+
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     const handleOpenCreateModal = (parentId = null) => {
@@ -364,6 +372,41 @@ const GroupView = () => {
         });
     };
 
+    const handleLeaveGroup = () => {
+        if (!currentGroup) return;
+        const selfMember = members.find((m) => {
+            if (!user) return false;
+            if (user.email && m.email) {
+                return m.email.toLowerCase() === user.email.toLowerCase();
+            }
+            if (user.id && m.userId) {
+                return m.userId === user.id;
+            }
+            return false;
+        });
+
+        if (!selfMember) {
+            toast.error('Could not find your membership in this group.');
+            return;
+        }
+
+        setConfirmConfig({
+            title: 'Leave group?',
+            message: 'You will be removed from this group and lose access to its sections.',
+            confirmLabel: 'Leave group',
+            onConfirm: async () => {
+                try {
+                    await axiosClient.delete(`/groups/${groupId}/members/${selfMember.userId}`);
+                    toast.success('You left the group');
+                    navigate('/dashboard');
+                } catch (error) {
+                    console.error('Failed to leave group', error);
+                    toast.error('Failed to leave group');
+                }
+            }
+        });
+    };
+
     const renderSectionContent = () => {
         if (!selectedSection) {
             const hasSections = sections && sections.length > 0;
@@ -398,7 +441,7 @@ const GroupView = () => {
                     sectionId={selectedSection.id}
                     allSections={sections}
                     onSelectSection={handleSelectSection}
-                    onOpenCreateModal={handleOpenCreateModal}
+                    onOpenCreateModal={currentGroup?.currentUserRole === 'ADMIN' ? handleOpenCreateModal : undefined}
                 />
             );
             default: return <div className="p-4">Unknown Type</div>;
@@ -475,13 +518,13 @@ const GroupView = () => {
                                     <ArrowLeft size={12} />
                                     <span>Back to groups</span>
                                 </button>
-                                {currentGroup?.currentUserRole === 'ADMIN' && (
+                                {currentGroup && (
                                     <button
                                         type="button"
                                         onClick={() => setShowManageModal(true)}
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[11px] font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                                     >
-                                        Manage
+                                        {currentGroup.currentUserRole === 'ADMIN' ? 'Manage group' : 'View group'}
                                     </button>
                                 )}
                             </div>
@@ -497,7 +540,9 @@ const GroupView = () => {
                                     type="button"
                                     onClick={() => {
                                         navigator.clipboard.writeText(currentGroup.inviteCode).then(() => {
+                                            setInviteCodeCopied(true);
                                             toast.success('Invite code copied');
+                                            setTimeout(() => setInviteCodeCopied(false), 1500);
                                         }).catch(() => {
                                             toast.error('Failed to copy');
                                         });
@@ -505,7 +550,7 @@ const GroupView = () => {
                                     className="p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                                     aria-label="Copy invite code"
                                 >
-                                    <Copy size={12} />
+                                    {inviteCodeCopied ? <Check size={12} /> : <Copy size={12} />}
                                 </button>
                             )}
                         </div>
@@ -576,7 +621,7 @@ const GroupView = () => {
                                 {/* Removed Manage button for simplicity */}
                             </div>
                         </div>
-                        <ul className="space-y-1 max-h-60 md:max-h-72 overflow-y-auto text-[11px] text-gray-700">
+                        <ul className="space-y-1 max-h-none md:max-h-72 overflow-y-auto text-[11px] text-gray-700">
                             {members.length === 0 && !membersLoading ? (
                                 <li className="text-gray-400">No members loaded.</li>
                             ) : (
@@ -674,7 +719,7 @@ const GroupView = () => {
 
                 {/* Main Content */}
                 <main className="flex-1 overflow-hidden flex flex-col w-full">
-                    <div className="flex items-center justify-between px-6 py-3 border-b bg-white shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-6 py-3 border-b bg-white shadow-sm">
                         <div className="min-w-0">
                             {selectedSection ? (
                                 <div>
@@ -689,25 +734,37 @@ const GroupView = () => {
                                                         : selectedSection.type === 'PAYMENT' ? 'bg-indigo-50 border-indigo-100 text-indigo-700'
                                                             : 'bg-gray-50 border-gray-200 text-gray-700'
                                             }`}>
-                                            {selectedSection.type === 'NOTE' ? 'Notes'
-                                                : selectedSection.type === 'LIST' ? 'Lists'
+                                            {selectedSection.type === 'NOTE' ? 'Note'
+                                                : selectedSection.type === 'LIST' ? 'Checklist'
                                                     : selectedSection.type === 'GALLERY' ? 'Files'
-                                                        : selectedSection.type === 'REMINDER' ? 'Reminders'
+                                                        : selectedSection.type === 'REMINDER' ? 'Reminder'
                                                             : selectedSection.type === 'PAYMENT' ? 'Expenses'
                                                                 : 'Folder'}
                                         </span>
                                     </div>
-                                    {selectedSection.parentId && (
-                                        <button
-                                            onClick={() => {
-                                                const parent = sections.find(s => s.id === selectedSection.parentId);
-                                                if (parent) handleSelectSection(parent);
-                                            }}
-                                            className="mt-1 text-[11px] text-gray-500 hover:text-gray-700"
-                                        >
-                                            ↑ Back to parent folder
-                                        </button>
-                                    )}
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {selectedSection.parentId && (
+                                            <button
+                                                onClick={() => {
+                                                    const parent = sections.find(s => s.id === selectedSection.parentId);
+                                                    if (parent) handleSelectSection(parent);
+                                                }}
+                                                className="text-[11px] text-gray-500 hover:text-gray-700"
+                                            >
+                                                ↑ Back to parent folder
+                                            </button>
+                                        )}
+                                        {selectedSection && currentGroup?.currentUserRole === 'ADMIN' && (
+                                            <button
+                                                type="button"
+                                                onClick={handleDeleteSection}
+                                                className="sm:hidden inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-[11px] font-medium text-red-600 shadow-sm hover:bg-red-50"
+                                            >
+                                                <Trash2 size={12} />
+                                                Delete
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div>
@@ -716,12 +773,12 @@ const GroupView = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                             {selectedSection && currentGroup?.currentUserRole === 'ADMIN' && (
                                 <button
                                     type="button"
                                     onClick={handleDeleteSection}
-                                    className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
+                                    className="hidden sm:inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
                                 >
                                     <Trash2 size={14} />
                                     <span>Delete section</span>
@@ -731,18 +788,8 @@ const GroupView = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-                        <div className={`bg-white rounded-xl shadow-sm border overflow-auto ${selectedSection
-                            ? selectedSection.type === 'NOTE' ? 'border-blue-100'
-                                : selectedSection.type === 'LIST' ? 'border-emerald-100'
-                                    : selectedSection.type === 'GALLERY' ? 'border-rose-100'
-                                        : selectedSection.type === 'REMINDER' ? 'border-amber-100'
-                                            : selectedSection.type === 'PAYMENT' ? 'border-indigo-100'
-                                                : 'border-gray-100'
-                            : 'border-gray-100'
-                            }`}>
-                            {renderSectionContent()}
-                        </div>
+                    <div className="flex-1 overflow-y-auto px-2 sm:px-6 py-3 sm:py-4">
+                        {renderSectionContent()}
                     </div>
                 </main>
 
@@ -778,6 +825,16 @@ const GroupView = () => {
                             handleDeleteSectionById(section);
                         }}
                         onViewMember={(member) => setSelectedMemberForInfo(member)}
+                        onInviteByEmail={currentGroup.currentUserRole === 'ADMIN' ? async (email) => {
+                            try {
+                                await axiosClient.post(`/groups/${groupId}/invites`, { email });
+                                toast.success('Invite sent');
+                            } catch (error) {
+                                console.error('Failed to send invite', error);
+                                const msg = error.response?.data?.message || 'Failed to send invite';
+                                toast.error(msg);
+                            }
+                        } : undefined}
                     />
                 )}
                 {selectedMemberForInfo && (
@@ -809,8 +866,8 @@ const GroupView = () => {
     return (
         <div className="min-h-screen bg-gray-50 px-2 sm:px-4 py-4 flex flex-col">
             <div className="max-w-7xl mx-auto space-y-6 flex-1 w-full">
-                <div className="flex items-center justify-between">
-                    <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1 min-w-0">
                         <button
                             type="button"
                             onClick={() => navigate('/dashboard')}
@@ -819,170 +876,80 @@ const GroupView = () => {
                             <ArrowLeft size={12} />
                             <span>Back to groups</span>
                         </button>
-                        <h1 className="text-xl font-bold text-gray-900">{currentGroup?.displayName}</h1>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-gray-600">
-                            <div className="flex items-center gap-1">
-                                <span>Code:</span>
-                                <span className="font-mono text-[11px] uppercase bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{currentGroup?.inviteCode}</span>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="text-xl font-bold text-gray-900 truncate max-w-full">
+                                    {currentGroup?.displayName}
+                                </h1>
                                 {currentGroup?.inviteCode && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(currentGroup.inviteCode || '').then(() => {
-                                                toast.success('Invite code copied');
-                                            }).catch(() => {
-                                                toast.error('Failed to copy');
-                                            });
-                                        }}
-                                        className="ml-1 p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                                        aria-label="Copy invite code"
-                                    >
-                                        <Copy size={12} />
-                                    </button>
+                                    <div className="flex items-center gap-1 text-xs text-gray-700">
+                                        <span className="hidden sm:inline">Code:</span>
+                                        <span className="font-mono text-[11px] uppercase bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">
+                                            {currentGroup.inviteCode}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(currentGroup.inviteCode || '').then(() => {
+                                                    setInviteCodeCopied(true);
+                                                    toast.success('Invite code copied');
+                                                    setTimeout(() => setInviteCodeCopied(false), 1500);
+                                                }).catch(() => {
+                                                    toast.error('Failed to copy');
+                                                });
+                                            }}
+                                            className="ml-0.5 p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                                            aria-label="Copy invite code"
+                                        >
+                                            {inviteCodeCopied ? <Check size={12} /> : <Copy size={12} />}
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                             {typeof currentGroup?.storageLimit === 'number' && currentGroup.storageLimit > 0 && (
-                                <>
-                                    <span className="text-gray-300">•</span>
+                                <div className="text-[11px] text-gray-500">
                                     {(() => {
                                         const usedMb = currentGroup.storageUsage / 1024 / 1024;
                                         const limitMb = currentGroup.storageLimit / 1024 / 1024;
                                         const percent = Math.min(100, (currentGroup.storageUsage / currentGroup.storageLimit) * 100);
-                                        return (
-                                            <span className="text-xs text-gray-600">
-                                                {percent.toFixed(0)}% used ({usedMb.toFixed(1)} MB of {limitMb.toFixed(1)} MB)
-                                            </span>
-                                        );
+                                        return `${percent.toFixed(0)}% used (${usedMb.toFixed(1)} MB of ${limitMb.toFixed(1)} MB)`;
                                     })()}
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        {currentGroup?.currentUserRole === 'ADMIN' && (
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        {currentGroup?.currentUserRole === 'ADMIN' ? (
                             <>
                                 <button
                                     onClick={() => handleOpenCreateModal(null)}
-                                    className="px-3 py-2 rounded-lg border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 font-medium text-xs"
+                                    className="px-3 py-1.5 rounded-lg border border-blue-200 text-blue-700 bg-white hover:bg-blue-50 font-medium text-xs"
                                 >
                                     + New Section
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowManageModal(true)}
-                                    className="px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
                                 >
                                     Manage group
                                 </button>
                             </>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setShowManageModal(true)}
+                                className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                                View group
+                            </button>
                         )}
                         {renderViewToggle()}
                     </div>
                 </div>
 
-                {currentGroup?.currentUserRole === 'ADMIN' && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col justify-between">
-                            <div>
-                                <p className="text-gray-500 tracking-wide">Total sections</p>
-                                <p className="text-2xl font-semibold text-gray-900">{rootSections.length}</p>
-                                <p className="mt-1 text-[11px] text-gray-500">
-                                    {rootSections.length === sections.length
-                                        ? 'No nested sections'
-                                        : `${sections.length} including nested sections`}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col justify-between">
-                            <div className="flex items-center justify-between mb-1">
-                                <p className="text-gray-500 tracking-wide">Join requests</p>
-                                <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px]">
-                                    {pendingLoading ? '…' : pendingRequests.length}
-                                </span>
-                            </div>
-                            {pendingRequests.length === 0 && !pendingLoading ? (
-                                <p className="text-xs text-gray-400">No pending requests</p>
-                            ) : (
-                                <ul className="mt-1 space-y-1 max-h-20 overflow-y-auto text-xs text-gray-700">
-                                    {pendingRequests.map(req => (
-                                        <li key={req.memberId} className="flex items-center justify-between">
-                                            <span className="truncate mr-2">
-                                                {req.firstName} {req.lastName}
-                                            </span>
-                                            <button
-                                                onClick={() => handleApproveRequest(req.memberId)}
-                                                className="px-2 py-0.5 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700"
-                                            >
-                                                Approve
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col justify-between">
-                            <div className="flex items-center justify-between mb-1">
-                                <p className="text-gray-500 tracking-wide">Members</p>
-                                <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px]">
-                                    {membersLoading ? '…' : members.length}
-                                </span>
-                            </div>
-                            <ul className="mt-1 space-y-1 max-h-20 overflow-y-auto text-xs text-gray-700">
-                                {members.length === 0 && !membersLoading ? (
-                                    <li className="text-gray-400">No members yet.</li>
-                                ) : (
-                                    members.map(member => (
-                                        <li
-                                            key={member.userId}
-                                            className="flex items-center justify-between gap-2"
-                                            title={`${member.firstName || ''} ${member.lastName || ''} \n${member.email || ''}`}
-                                        >
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="h-7 w-7 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-semibold text-blue-600 border border-blue-100 shrink-0 overflow-hidden">
-                                                    {member.pfpUrl ? (
-                                                        <img
-                                                            src={member.pfpUrl}
-                                                            alt={member.firstName || member.email || 'Member avatar'}
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        ((member.firstName?.[0] || '') + (member.lastName?.[0] || '') || (member.email?.[0] || '?')).toUpperCase()
-                                                    )}
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    className="truncate hover:underline text-left"
-                                                    onClick={() => setSelectedMemberForInfo(member)}
-                                                >
-                                                    {member.firstName} {member.lastName}
-                                                </button>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                {member.role === 'ADMIN' && (
-                                                    <span className="px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 text-[9px] uppercase">
-                                                        Admin
-                                                    </span>
-                                                )}
-                                                {currentGroup?.currentUserRole === 'ADMIN' && member.role !== 'ADMIN' && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveMember(member)}
-                                                        className="text-[10px] text-red-600 hover:text-red-700"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </li>
-                                    ))
-                                )}
-                            </ul>
-                        </div>
-                    </div>
-                )}
-
                 <div>
-                    <h2 className="text-sm font-semibold text-gray-700 mb-3">Sections</h2>
+                        <h2 className="text-sm font-semibold text-gray-700 mb-3">Sections</h2>
                     {sectionsLoading ? (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-sm text-gray-400">
                             Loading sections...
@@ -1001,6 +968,9 @@ const GroupView = () => {
                         />
                     )}
                 </div>
+
+                {/* Admin summary cards have been removed to keep the main group view clean.
+                    Use the "Manage group" button to see admin-focused stats instead. */}
             </div>
 
             {showCreateModal && (
@@ -1035,6 +1005,20 @@ const GroupView = () => {
                         handleDeleteSectionById(section);
                     }}
                     onViewMember={(member) => setSelectedMemberForInfo(member)}
+                    onInviteByEmail={currentGroup.currentUserRole === 'ADMIN' ? async (email) => {
+                        try {
+                            await axiosClient.post(`/groups/${groupId}/invites`, { email });
+                            toast.success('Invite sent');
+                        } catch (error) {
+                            console.error('Failed to send invite', error);
+                            const msg = error.response?.data?.message || 'Failed to send invite';
+                            toast.error(msg);
+                        }
+                    } : undefined}
+                    onLeaveGroup={currentGroup.currentUserRole !== 'ADMIN' ? () => {
+                        setShowManageModal(false);
+                        handleLeaveGroup();
+                    } : undefined}
                 />
             )}
             {selectedMemberForInfo && (

@@ -15,5 +15,6 @@ public class UserDto {
     private String contact;
     private String pfpUrl;
     private boolean reminderEmailEnabled;
+    private String fontPreference;
 }
 

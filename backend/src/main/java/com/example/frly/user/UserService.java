@@ -49,6 +49,9 @@ public class UserService {
         user.setContact(updated.getContact());
         user.setPfpUrl(updated.getPfpUrl());
         user.setReminderEmailEnabled(updated.isReminderEmailEnabled());
+        if (updated.getFontPreference() != null) {
+            user.setFontPreference(updated.getFontPreference());
+        }
 
         User saved = userRepository.save(user);
         return userMapper.toUserDto(saved);

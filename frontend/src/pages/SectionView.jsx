@@ -11,7 +11,7 @@ import FolderView from '../components/sections/FolderView';
 import PaymentView from '../components/sections/PaymentView';
 import CreateSectionModal from '../components/CreateSectionModal';
 import { toast } from 'react-toastify';
-import { Trash2, ArrowLeft, Home, LayoutPanelLeft, LayoutGrid } from 'lucide-react';
+import { Trash2, ArrowLeft, Home, LayoutPanelLeft, LayoutGrid, Users } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal';
 
 const SectionView = () => {
@@ -35,6 +35,13 @@ const SectionView = () => {
             dispatch(fetchGroupDetails(groupId));
         }
     }, [groupId, currentGroup, dispatch]);
+
+    // Ensure new sections open at the top of the viewport
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [groupId, sectionId]);
 
     // Fetch sections and resolve the one we care about
     useEffect(() => {
@@ -88,6 +95,10 @@ const SectionView = () => {
 
     const handleDeleteSection = () => {
         if (!section) return;
+        if (!currentGroup || currentGroup.currentUserRole !== 'ADMIN') {
+            toast.error('Only admins can delete sections');
+            return;
+        }
         setConfirmConfig({
             title: 'Delete section?',
             message: `Delete section "${section.title}" and its contents?`,
@@ -151,7 +162,7 @@ const SectionView = () => {
                         sectionId={section.id}
                         allSections={sections}
                         onSelectSection={(s) => navigate(`/groups/${groupId}/sections/${s.id}`)}
-                        onOpenCreateModal={handleOpenCreateModal}
+                        onOpenCreateModal={currentGroup?.currentUserRole === 'ADMIN' ? handleOpenCreateModal : undefined}
                     />
                 );
             default:
@@ -160,16 +171,16 @@ const SectionView = () => {
     };
 
     const typeLabel = section?.type === 'NOTE'
-        ? 'Notes'
+        ? 'Note'
         : section?.type === 'LIST'
-        ? 'Lists'
-        : section?.type === 'GALLERY'
-        ? 'Gallery'
-        : section?.type === 'REMINDER'
-        ? 'Reminders'
-        : section?.type === 'PAYMENT'
-        ? 'Payments'
-        : 'Folder';
+            ? 'Checklist'
+            : section?.type === 'GALLERY'
+                ? 'Files'
+                : section?.type === 'REMINDER'
+                    ? 'Reminder'
+                    : section?.type === 'PAYMENT'
+                        ? 'Expenses'
+                        : 'Folder';
 
     if (groupLoading && loading) {
         return (
@@ -180,99 +191,110 @@ const SectionView = () => {
     }
 
     return (
-        <div className="min-h-[70vh] bg-gray-50 rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-            <div className="flex flex-col gap-3 mb-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={handleBackPrevious}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
-                        >
-                            <ArrowLeft size={14} />
-                            Back
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleGoToGroup}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
-                        >
-                            <Home size={14} />
-                            Home
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleGoHome}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
-                        >
-                            <Home size={14} />
-                            Back to groups
-                        </button>
+        <div className="min-h-[70vh]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 ">
+                <div className="flex flex-col gap-3 mb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleBackPrevious}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                            >
+                                <ArrowLeft size={14} />
+                                Back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGoToGroup}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                            >
+                                <Home size={14} />
+                                Home
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGoHome}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 hover:bg-gray-50"
+                            >
+                                <Users size={14} />
+                                Back to groups
+                            </button>
+                        </div>
+                        {section && currentGroup?.currentUserRole === 'ADMIN' && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteSection}
+                                    className="hidden sm:inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
+                                >
+                                    <Trash2 size={14} />
+                                    Delete section
+                                </button>
+                                <div className="hidden sm:inline-flex items-center rounded-full border border-gray-200 bg-white p-0.5 text-[11px] shadow-sm">
+                                    <button
+                                        type="button"
+                                        onClick={handleGoToWorkspace}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                                    >
+                                        <LayoutPanelLeft size={12} />
+                                        Workspace
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-medium bg-blue-600 text-white shadow"
+                                    >
+                                        <LayoutGrid size={12} />
+                                        Overview
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    {section && (
-                        <div className="flex items-center gap-2">
+
+                    <div className="flex items-start justify-between gap-3 pb-3 border-b-2 border-gray-100">
+                        <div className="min-w-0 ">
+                            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
+                                {section?.title || 'Section'}
+                            </h1>
+                            <div className="mt-1 flex items-center gap-2 text-xs sm:text-[13px] text-gray-500">
+                                {currentGroup && (
+                                    <span className="truncate">in {currentGroup.displayName}</span>
+                                )}
+                                {section && (
+                                    <span
+                                        className={`px-2 py-0.5 rounded-full border ${section.type === 'NOTE'
+                                                ? 'bg-blue-50 border-blue-100 text-blue-700'
+                                                : section.type === 'LIST'
+                                                    ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                                                    : section.type === 'GALLERY'
+                                                        ? 'bg-rose-50 border-rose-100 text-rose-700'
+                                                        : section.type === 'REMINDER'
+                                                            ? 'bg-amber-50 border-amber-100 text-amber-700'
+                                                            : 'bg-gray-50 border-gray-200 text-gray-700'
+                                            }`}
+                                    >
+                                        {typeLabel}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {section && currentGroup?.currentUserRole === 'ADMIN' && (
                             <button
                                 type="button"
                                 onClick={handleDeleteSection}
-                                className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
+                                className="sm:hidden inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm hover:bg-red-50 flex-shrink-0"
                             >
                                 <Trash2 size={14} />
-                                Delete section
+                                Delete
                             </button>
-                            <div className="hidden sm:inline-flex items-center rounded-full border border-gray-200 bg-white p-0.5 text-[11px] shadow-sm">
-                                <button
-                                    type="button"
-                                    onClick={handleGoToWorkspace}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                                >
-                                    <LayoutPanelLeft size={12} />
-                                    Workspace
-                                </button>
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-medium bg-blue-600 text-white shadow"
-                                >
-                                    <LayoutGrid size={12} />
-                                    Overview
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
-                            {section?.title || 'Section'}
-                        </h1>
-                        <div className="mt-1 flex items-center gap-2 text-xs sm:text-[13px] text-gray-500">
-                            {currentGroup && (
-                                <span className="truncate">in {currentGroup.displayName}</span>
-                            )}
-                            {section && (
-                                <span
-                                    className={`px-2 py-0.5 rounded-full border ${
-                                        section.type === 'NOTE'
-                                            ? 'bg-blue-50 border-blue-100 text-blue-700'
-                                            : section.type === 'LIST'
-                                            ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                                            : section.type === 'GALLERY'
-                                            ? 'bg-rose-50 border-rose-100 text-rose-700'
-                                            : section.type === 'REMINDER'
-                                            ? 'bg-amber-50 border-amber-100 text-amber-700'
-                                            : 'bg-gray-50 border-gray-200 text-gray-700'
-                                    }`}
-                                >
-                                    {typeLabel}
-                                </span>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            <div className="mt-2 bg-white rounded-xl shadow-sm border border-gray-100">
-                {renderContent()}
+                <div className="mt-2">
+                    {renderContent()}
+                </div>
             </div>
 
             {showCreateModal && (

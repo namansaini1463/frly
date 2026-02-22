@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -12,6 +12,18 @@ const Login = () => {
     const location = useLocation();
 
     const from = location.state?.from?.pathname || "/dashboard";
+
+    useEffect(() => {
+        try {
+            const expired = sessionStorage.getItem('authExpired');
+            if (expired === '1') {
+                sessionStorage.removeItem('authExpired');
+                toast.info('Your session has expired. Please sign in again.');
+            }
+        } catch {
+            // ignore storage issues
+        }
+    }, []);
 
     const handleForgotPassword = async () => {
         if (!email) {
@@ -76,7 +88,7 @@ const Login = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full rounded-lg border border-slate-200 bg-slate-50/60 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3"
+                                    className="block w-full rounded-lg border border-slate-200 bg-slate-50/60 py-2 text-base sm:text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3"
                                 />
                             </div>
                         </div>
@@ -105,7 +117,7 @@ const Login = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full rounded-lg border border-slate-200 bg-slate-50/60 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3"
+                                    className="block w-full rounded-lg border border-slate-200 bg-slate-50/60 py-2 text-base sm:text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 px-3"
                                 />
                             </div>
                         </div>
