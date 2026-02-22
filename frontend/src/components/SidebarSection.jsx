@@ -117,10 +117,10 @@ const SidebarSection = ({ section, allSections, selectedSection, onSelect, depth
                     </button>
                 ) : (
                     <span className={`ml-2 text-[10px] uppercase tracking-wide flex-shrink-0 ${typeLabelClasses}`}>
-                        {section.type === 'NOTE' && 'Notes'}
-                        {section.type === 'LIST' && 'List'}
+                        {section.type === 'NOTE' && 'Note'}
+                        {section.type === 'LIST' && 'Checklist'}
                         {section.type === 'GALLERY' && 'Files'}
-                        {section.type === 'REMINDER' && 'Reminders'}
+                        {section.type === 'REMINDER' && 'Reminder'}
                         {section.type === 'PAYMENT' && 'Expenses'}
                     </span>
                 )}

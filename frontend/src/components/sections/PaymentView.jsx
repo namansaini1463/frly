@@ -222,10 +222,16 @@ const PaymentView = ({ sectionId }) => {
         return `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email;
     };
 
+    const displayCurrency = (code) => {
+        if (!code) return '';
+        if (code === 'INR') return '₹';
+        return code;
+    };
+
     return (
-        <div className="h-full flex flex-col p-4">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Payments</h2>
-            <p className="text-xs text-gray-500 mb-4">Track shared expenses and see who owes whom.</p>
+        <div className="h-full flex flex-col sm:p-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Expenses</h2>
+            <p className="text-xs text-gray-500 mb-4">Track shared expenses in your group and see who owes whom.</p>
 
             <form onSubmit={handleSubmit} className="space-y-3 mb-4">
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -241,16 +247,13 @@ const PaymentView = ({ sectionId }) => {
                         step="0.01"
                         value={totalAmount}
                         onChange={e => setTotalAmount(e.target.value)}
-                        placeholder="Amount"
-                        className="w-32 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={`Amount in ${displayCurrency(currency) || '₹'}`}
+                        className="w-36 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <div className="px-3 py-2 border rounded-lg text-xs text-gray-600 bg-gray-50 flex items-center">
-                        INR
-                    </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 text-[11px] text-gray-600">
-                    <span className="mr-1">Split between:</span>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
+                    <span className="mr-1 text-gray-500">Split between:</span>
                     <button
                         type="button"
                         onClick={() => setSplitMode('CUSTOM')}
@@ -274,12 +277,12 @@ const PaymentView = ({ sectionId }) => {
                     </button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 items-center">
-                    <span className="text-xs text-gray-500">Paid by</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                    <span className="text-gray-500">Paid by</span>
                     <select
                         value={paidByUserId}
                         onChange={e => setPaidByUserId(e.target.value)}
-                        className="px-2 py-1.5 border rounded-lg text-sm flex-1 sm:flex-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-2 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         {members.map(m => (
                             <option key={m.userId} value={m.userId}>
@@ -288,7 +291,7 @@ const PaymentView = ({ sectionId }) => {
                         ))}
                     </select>
                     {splitMode !== 'PAYER_ONLY' && (
-                        <span className="text-xs text-gray-400 ml-auto">Shares total: {totalShares.toFixed(2)}</span>
+                        <span className="text-[11px] text-gray-400 ml-auto">Shares total: {totalShares.toFixed(2)}</span>
                     )}
                 </div>
 
@@ -336,18 +339,36 @@ const PaymentView = ({ sectionId }) => {
             </div>
             </form>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto space-y-4 mt-2">
+                <div className="border rounded-lg bg-white p-3">
+                    <h3 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Balances</h3>
+                    {balances.length === 0 ? (
+                        <p className="text-xs text-gray-400">No balances yet.</p>
+                    ) : (
+                        <ul className="space-y-1 text-xs">
+                            {balances.map(b => (
+                                <li key={b.userId} className="flex justify-between">
+                                    <span className="text-gray-700">{getMemberName(b.userId)}</span>
+                                    <span className={b.balance > 0 ? 'text-emerald-600' : b.balance < 0 ? 'text-red-500' : 'text-gray-500'}>
+                                        {b.balance > 0 ? '+' : ''}{displayCurrency(currency)}{b.balance.toFixed(2)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
                 <div className="border rounded-lg bg-white p-3">
                     <h3 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Expenses</h3>
                     {expenses.length === 0 ? (
                         <p className="text-xs text-gray-400">No expenses yet.</p>
                     ) : (
                         <ul className="space-y-2 text-xs">
-                            {expenses.map(exp => (
+                            {expenses.slice().reverse().map(exp => (
                                 <li key={exp.id} className="border rounded-md p-2">
                                     <div className="flex justify-between mb-1">
                                         <span className="font-medium text-gray-800">{exp.description || 'Expense'}</span>
-                                        <span className="text-gray-900 font-semibold">{exp.totalAmount?.toFixed(2)} {exp.currency}</span>
+                                        <span className="text-gray-900 font-semibold">{displayCurrency(exp.currency)}{exp.totalAmount?.toFixed(2)}</span>
                                     </div>
                                     <p className="text-[11px] text-gray-500 mb-1">
                                         Paid by {exp.paidByFirstName} {exp.paidByLastName}
@@ -363,18 +384,23 @@ const PaymentView = ({ sectionId }) => {
                                         if (isPayerOnly) {
                                             return (
                                                 <p className="text-[11px] text-gray-400">
-                                                    No split  personal expense only.
+                                                    No split – personal expense only.
                                                 </p>
                                             );
                                         }
 
                                         return (
                                             <ul className="text-[11px] text-gray-600 space-y-0.5">
-                                                {shares.map(s => (
-                                                    <li key={s.userId}>
-                                                        {s.firstName} {s.lastName} owes {s.shareAmount?.toFixed(2)} {exp.currency}
-                                                    </li>
-                                                ))}
+                                                {shares.map(s => {
+                                                    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Member';
+                                                    const isPayer = s.userId === exp.paidByUserId;
+                                                    const amountText = `${displayCurrency(exp.currency)}${(s.shareAmount || 0).toFixed(2)}`;
+                                                    return (
+                                                        <li key={s.userId}>
+                                                            {isPayer ? `${name} pays ${amountText} as their share.` : `${name} owes ${amountText}.`}
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         );
                                     })()}
@@ -394,24 +420,6 @@ const PaymentView = ({ sectionId }) => {
                                             Remove
                                         </button>
                                     </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <div className="border rounded-lg bg-white p-3">
-                    <h3 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Balances</h3>
-                    {balances.length === 0 ? (
-                        <p className="text-xs text-gray-400">No balances yet.</p>
-                    ) : (
-                        <ul className="space-y-1 text-xs">
-                            {balances.map(b => (
-                                <li key={b.userId} className="flex justify-between">
-                                    <span className="text-gray-700">{getMemberName(b.userId)}</span>
-                                    <span className={b.balance > 0 ? 'text-emerald-600' : b.balance < 0 ? 'text-red-500' : 'text-gray-500'}>
-                                        {b.balance > 0 ? '+' : ''}{b.balance.toFixed(2)}
-                                    </span>
                                 </li>
                             ))}
                         </ul>

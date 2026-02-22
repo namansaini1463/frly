@@ -12,11 +12,11 @@ const BentoGrid = ({ sections, previews, allSections, groupId, onOpenCreateModal
                     ? allSections.filter(s => s.parentId === section.id).length
                     : 0;
 
-                const typeLabel = section.type === 'NOTE' ? 'Notes'
-                    : section.type === 'LIST' ? 'Lists'
+                const typeLabel = section.type === 'NOTE' ? 'Note'
+                    : section.type === 'LIST' ? 'Checklist'
                         : section.type === 'GALLERY' ? 'Files'
-                            : section.type === 'REMINDER' ? 'Reminders'
-                                : section.type === 'PAYMENT' ? 'Payments'
+                            : section.type === 'REMINDER' ? 'Reminder'
+                                : section.type === 'PAYMENT' ? 'Expenses'
                                     : 'Folder';
 
                 const typeBadgeClass = section.type === 'NOTE' ? 'bg-blue-50 text-blue-700'

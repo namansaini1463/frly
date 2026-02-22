@@ -61,15 +61,15 @@ const ListView = ({ sectionId }) => {
     const totalCount = items.length;
 
     return (
-        <div className="h-full flex flex-col p-4 bg-gradient-to-b from-gray-50 to-transparent">
+        <div className="h-full flex flex-col p-0 sm:p-4">
             <div className="w-full h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                     <div>
                         <h2 className="text-base sm:text-lg font-semibold text-gray-900">Checklist</h2>
                         <p className="text-xs text-gray-500 mt-1">Capture tasks and tick them off. Completed items glide down automatically.</p>
                     </div>
                     {totalCount > 0 && (
-                        <div className="flex flex-col items-end gap-1 text-[10px] text-gray-500">
+                        <div className="flex flex-row sm:flex-col items-start sm:items-end gap-1 text-[10px] text-gray-500">
                             <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                 <span>{activeItems.length} open</span>

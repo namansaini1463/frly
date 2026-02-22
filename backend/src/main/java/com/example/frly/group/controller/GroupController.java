@@ -7,7 +7,9 @@ import com.example.frly.group.dto.JoinGroupRequestDto;
 import com.example.frly.group.dto.UpdateViewPreferenceRequestDto;
 import com.example.frly.group.dto.UpdateGroupRequestDto;
 import com.example.frly.group.dto.GroupMemberSimpleDto;
+import com.example.frly.group.dto.CreateGroupInviteRequestDto;
 import com.example.frly.group.service.GroupService;
+import com.example.frly.group.service.GroupInviteService;
 import com.example.frly.auth.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import static com.example.frly.constants.LogConstants.TENANT_CONTROLLER_CREATE;
 public class GroupController {
 
     private final GroupService groupService;
+    private final GroupInviteService groupInviteService;
 
     @PostMapping
     public ResponseEntity<Long> createGroup(@RequestBody CreateGroupRequestDto request) {
@@ -81,6 +84,12 @@ public class GroupController {
     public ResponseEntity<Void> removeMember(@PathVariable Long groupId, @PathVariable Long userId) {
         groupService.removeMember(groupId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{groupId}/invites")
+    public ResponseEntity<Void> sendInvite(@PathVariable Long groupId, @RequestBody CreateGroupInviteRequestDto request) {
+        groupInviteService.sendInvite(groupId, request);
+        return ResponseEntity.ok().build();
     }
 }
 

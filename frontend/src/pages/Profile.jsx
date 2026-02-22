@@ -16,6 +16,7 @@ const Profile = () => {
         contact: '',
         pfpUrl: '',
         reminderEmailEnabled: true,
+        fontPreference: 'normal',
     });
 
     useEffect(() => {
@@ -30,6 +31,7 @@ const Profile = () => {
                     contact: data.contact || '',
                     pfpUrl: data.pfpUrl || '',
                     reminderEmailEnabled: data.reminderEmailEnabled !== undefined ? data.reminderEmailEnabled : true,
+                    fontPreference: data.fontPreference || user?.fontPreference || localStorage.getItem('fontPreference') || 'normal',
                 });
                 updateUser({
                     id: data.id,
@@ -39,6 +41,7 @@ const Profile = () => {
                     contact: data.contact,
                     pfpUrl: data.pfpUrl,
                     reminderEmailEnabled: data.reminderEmailEnabled,
+                    fontPreference: data.fontPreference || user?.fontPreference || localStorage.getItem('fontPreference') || 'normal',
                     token: user?.token,
                 });
             } catch (error) {
@@ -56,6 +59,10 @@ const Profile = () => {
         const { name, type, checked, value } = e.target;
         const nextValue = type === 'checkbox' ? checked : value;
         setForm((prev) => ({ ...prev, [name]: nextValue }));
+
+        if (name === 'fontPreference') {
+            updateUser({ fontPreference: nextValue });
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -68,6 +75,7 @@ const Profile = () => {
                 contact: form.contact,
                 pfpUrl: form.pfpUrl,
                 reminderEmailEnabled: form.reminderEmailEnabled,
+                fontPreference: form.fontPreference,
             });
             const updated = res.data;
             setForm({
@@ -77,6 +85,7 @@ const Profile = () => {
                 contact: updated.contact || '',
                 pfpUrl: updated.pfpUrl || '',
                 reminderEmailEnabled: updated.reminderEmailEnabled !== undefined ? updated.reminderEmailEnabled : true,
+                fontPreference: form.fontPreference || user?.fontPreference || 'normal',
             });
             updateUser({
                 id: updated.id,
@@ -86,6 +95,7 @@ const Profile = () => {
                 contact: updated.contact,
                 pfpUrl: updated.pfpUrl,
                 reminderEmailEnabled: updated.reminderEmailEnabled,
+                fontPreference: form.fontPreference || user?.fontPreference || 'normal',
             });
             toast.success('Profile updated');
         } catch (error) {
@@ -160,7 +170,7 @@ const Profile = () => {
                 <button
                     type="button"
                     onClick={handleSendResetEmail}
-                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-md border border-red-200 text-[11px] font-medium text-red-600 hover:bg-red-50"
+                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-md border border-red-200 text-xs sm:text-sm font-medium text-red-600 hover:bg-red-50"
                 >
                     Send password reset email
                 </button>
@@ -250,6 +260,24 @@ const Profile = () => {
                             <label htmlFor="reminderEmailEnabled" className="text-xs text-gray-700">
                                 Email me when my reminders are due
                             </label>
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Font size</label>
+                            <select
+                                name="fontPreference"
+                                value={form.fontPreference}
+                                onChange={handleChange}
+                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-2 py-1.5"
+                            >
+                                <option value="small">Small</option>
+                                <option value="normal">Default</option>
+                                <option value="large">Large</option>
+                                <option value="xlarge">Extra large</option>
+                            </select>
+                            <p className="mt-1 text-xs text-gray-400">
+                                We remember this on this device and use it across the app.
+                            </p>
                         </div>
 
                         {/* pfpUrl is managed via upload; no need to show raw URL field */}

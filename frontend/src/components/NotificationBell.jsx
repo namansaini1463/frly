@@ -1,12 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Bell } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
+
+const formatNotificationType = (type) => {
+    if (!type) return '';
+    const preset = {
+        GROUP_JOIN_REQUEST: 'Join request',
+        GROUP_JOIN_APPROVED: 'Join request approved',
+        GROUP_MEMBER_REMOVED: 'Member removed from group',
+        GROUP_MEMBER_LEFT: 'Member left group',
+        GROUP_LEFT: 'You left a group',
+    };
+    if (preset[type]) return preset[type];
+    // Fallback: transform SNAKE_CASE into Title Case
+    return type
+        .toLowerCase()
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+};
 
 const NotificationBell = () => {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const containerRef = useRef(null);
 
     const fetchNotifications = async () => {
         setLoading(true);
@@ -28,6 +47,21 @@ const NotificationBell = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        if (!open) return;
+
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open]);
+
     const toggleOpen = () => {
         const next = !open;
         setOpen(next);
@@ -47,7 +81,7 @@ const NotificationBell = () => {
     };
 
     return (
-        <div className="relative">
+        <div className="relative" ref={containerRef}>
             <button
                 type="button"
                 onClick={toggleOpen}
@@ -80,7 +114,7 @@ const NotificationBell = () => {
                                 >
                                     <div className="flex justify-between items-start gap-2">
                                         <div>
-                                            <p className="font-medium text-[11px] text-gray-700 mb-0.5">{n.type}</p>
+                                            <p className="font-medium text-[11px] text-gray-700 mb-0.5">{formatNotificationType(n.type)}</p>
                                             <p className="text-[11px] leading-snug">{n.message}</p>
                                         </div>
                                         {!n.read && (

@@ -8,23 +8,28 @@ import { Copy, Users } from 'lucide-react';
 
 const Dashboard = () => {
     const [groups, setGroups] = useState([]);
+    const [invites, setInvites] = useState([]);
     const [loading, setLoading] = useState(true);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     useEffect(() => {
         dispatch(clearGroup());
-        const fetchGroups = async () => {
+        const fetchAll = async () => {
             try {
-                const response = await axiosClient.get('/users/me/groups');
-                setGroups(response.data);
+                const [groupsRes, invitesRes] = await Promise.all([
+                    axiosClient.get('/users/me/groups'),
+                    axiosClient.get('/invites/mine').catch(() => ({ data: [] }))
+                ]);
+                setGroups(groupsRes.data || []);
+                setInvites(invitesRes.data || []);
             } catch (error) {
-                console.error("Failed to fetch groups", error);
+                console.error("Failed to fetch dashboard data", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchGroups();
+        fetchAll();
     }, [dispatch]);
 
     const handleGroupClick = (group) => {
@@ -47,9 +52,11 @@ const Dashboard = () => {
         </div>
     );
 
-    const totalGroups = groups.length;
-    const adminGroups = groups.filter(g => g.currentUserRole === 'ADMIN').length;
-    const pendingGroups = groups.filter(g => g.membershipStatus === 'PENDING').length;
+    const visibleGroups = groups.filter(g => g.membershipStatus !== 'REMOVED');
+    const totalGroups = visibleGroups.length;
+    const adminGroups = visibleGroups.filter(g => g.currentUserRole === 'ADMIN').length;
+    const pendingGroups = visibleGroups.filter(g => g.membershipStatus === 'PENDING').length;
+    const pendingInvites = invites.length;
 
     return (
         <div className="min-h-full">
@@ -78,7 +85,7 @@ const Dashboard = () => {
                 {totalGroups > 0 && (
                     <>
                         {/* Desktop / tablet cards */}
-                        <div className="hidden sm:grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="hidden sm:grid grid-cols-1 sm:grid-cols-4 gap-4">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase tracking-wide">Total groups</p>
@@ -94,11 +101,24 @@ const Dashboard = () => {
                                 <p className="text-xs text-gray-500 uppercase tracking-wide">Pending joins</p>
                                 <p className="text-2xl font-semibold text-amber-600">{pendingGroups}</p>
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/groups/join')}
+                                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-left hover:border-blue-200 hover:shadow-md transition cursor-pointer"
+                            >
+                                <p className="text-xs text-gray-500 uppercase tracking-wide flex items-center justify-between">
+                                    <span>Invites</span>
+                                    {pendingInvites > 0 && (
+                                        <span className="text-[10px] font-medium text-blue-600 underline-offset-2">View</span>
+                                    )}
+                                </p>
+                                <p className="text-2xl font-semibold text-blue-600 mt-1">{pendingInvites}</p>
+                            </button>
                         </div>
 
                         {/* Mobile compact summary at top */}
                         <div className="sm:hidden flex justify-center mt-2">
-                            <div className="flex w-4/5 max-w-md items-center rounded-2xl bg-white border border-gray-100 shadow-sm px-4 py-2">
+                            <div className="flex w-full max-w-md items-center rounded-2xl bg-white border border-gray-100 shadow-sm px-4 py-2 gap-3 overflow-x-auto">
                                 <div className="flex-1 flex flex-col items-center">
                                     <span className="text-sm text-gray-600">Total</span>
                                     <span className="font-semibold text-gray-900">{totalGroups}</span>
@@ -113,12 +133,21 @@ const Dashboard = () => {
                                     <span className="text-sm text-gray-600">Pending</span>
                                     <span className="font-semibold text-amber-600">{pendingGroups}</span>
                                 </div>
+                                <div className="h-8 w-px bg-gray-100" />
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/groups/join')}
+                                    className="flex-1 flex flex-col items-center focus:outline-none"
+                                >
+                                    <span className="text-sm text-gray-600">Invites</span>
+                                    <span className="font-semibold text-blue-600">{pendingInvites}</span>
+                                </button>
                             </div>
                         </div>
                     </>
                 )}
 
-                {groups.length === 0 ? (
+                {visibleGroups.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
                         <p className="text-gray-500 text-lg mb-4">You are not in any groups yet.</p>
                         <button
@@ -129,16 +158,16 @@ const Dashboard = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {groups.map(group => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        {visibleGroups.map(group => (
                             <div
                                 key={group.id}
                                 onClick={() => handleGroupClick(group)}
                                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border border-transparent hover:border-blue-200 overflow-hidden"
                             >
-                                <div className="p-6">
+                                <div className="p-4 sm:p-6">
                                     <div className="flex items-center justify-between mb-2 gap-2">
-                                        <h3 className="text-lg capitalize font-bold text-gray-800 truncate">{group.displayName}</h3>
+                                        <h3 className="text-base sm:text-lg capitalize font-bold text-gray-800 truncate">{group.displayName}</h3>
                                         <div className="flex items-center gap-2">
                                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 uppercase">
                                                 {group.currentUserRole || 'MEMBER'}

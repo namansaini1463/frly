@@ -103,9 +103,33 @@ public class GroupService {
         if (group.getStatus() != RecordStatus.ACTIVE) {
             throw new BadRequestException("Group is not active");
         }
+        
+        // Check for existing membership to support re-join behavior
+        java.util.Optional<GroupMember> existingOpt = groupMemberRepository.findByUserIdAndGroupId(userId, group.getId());
+        if (existingOpt.isPresent()) {
+            GroupMember existing = existingOpt.get();
+            if (existing.getStatus() == GroupMemberStatus.REMOVED) {
+                // Allow user to rejoin: turn removed membership back into a pending request
+                existing.setStatus(GroupMemberStatus.PENDING);
+                groupMemberRepository.save(existing);
 
-        if (groupMemberRepository.existsByUserIdAndGroupId(userId, group.getId())) {
-            throw new BadRequestException("You are already a member or have a pending request");
+                log.info("User {} re-requested to join Group {} (reusing removed membership)", userId, group.getId());
+
+                // Notify admins about the new join request
+                groupMemberRepository.findByGroupIdAndRole_Name(group.getId(), "ADMIN")
+                    .forEach(adminMember -> notificationService.notifyUser(
+                        adminMember.getUser().getId(),
+                        "GROUP_JOIN_REQUEST",
+                        String.format("%s %s requested to rejoin group '%s'",
+                            user.getFirstName(),
+                            user.getLastName(),
+                            group.getDisplayName())
+                    ));
+
+                return group.getId();
+            } else {
+                throw new BadRequestException("You are already a member or have a pending request");
+            }
         }
 
         Role memberRole = roleRepository.findByName("MEMBER")
@@ -213,7 +237,8 @@ public class GroupService {
     }
 
     public java.util.List<com.example.frly.group.dto.GroupResponseDto> getUserGroups(Long userId) {
-        return groupMemberRepository.findByUserId(userId).stream()
+        // Exclude memberships that were explicitly removed by the user/admin
+        return groupMemberRepository.findByUserIdAndStatusNot(userId, GroupMemberStatus.REMOVED).stream()
                 .map(member -> {
                     Group group = member.getGroup();
                     if (group.getStatus() == RecordStatus.DELETED) {
@@ -369,17 +394,58 @@ public class GroupService {
     @Transactional
     public void removeMember(Long groupId, Long userIdToRemove) {
         Long currentUserId = AuthUtil.getCurrentUserId();
-        validateAdminAccess(currentUserId, groupId);
-
+        // If a member is removing themselves, treat this as "leave group" and notify admins
         if (currentUserId.equals(userIdToRemove)) {
-            throw new BadRequestException("You cannot remove yourself from the group");
+            GroupMember member = groupMemberRepository.findByUserIdAndGroupId(currentUserId, groupId)
+                .orElseThrow(() -> new BadRequestException("Member not found in this group"));
+
+            member.setStatus(GroupMemberStatus.REMOVED);
+            groupMemberRepository.save(member);
+
+            Group group = member.getGroup();
+
+            // Notify the member that they left
+            notificationService.notifyUser(
+                currentUserId,
+                "GROUP_LEFT",
+                String.format("You left group '%s'.", group.getDisplayName())
+            );
+
+            // Notify all admins (except the leaving member) that someone left
+            groupMemberRepository.findByGroupIdAndRole_Name(groupId, "ADMIN")
+                .forEach(adminMember -> {
+                Long adminUserId = adminMember.getUser().getId();
+                if (!adminUserId.equals(currentUserId)) {
+                    notificationService.notifyUser(
+                        adminUserId,
+                        "GROUP_MEMBER_LEFT",
+                        String.format("%s %s left group '%s'",
+                            member.getUser().getFirstName(),
+                            member.getUser().getLastName(),
+                            group.getDisplayName())
+                    );
+                }
+                });
+            return;
         }
 
+        // Admin removing another member
+        validateAdminAccess(currentUserId, groupId);
+
         GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userIdToRemove, groupId)
-                .orElseThrow(() -> new BadRequestException("Member not found in this group"));
+            .orElseThrow(() -> new BadRequestException("Member not found in this group"));
 
         member.setStatus(GroupMemberStatus.REMOVED);
         groupMemberRepository.save(member);
+
+        Group group = member.getGroup();
+
+        // Notify the removed user
+        notificationService.notifyUser(
+            userIdToRemove,
+            "GROUP_MEMBER_REMOVED",
+            String.format("You have been removed from group '%s' by an admin.", group.getDisplayName())
+        );
     }
 
     @Transactional(readOnly = true)

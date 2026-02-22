@@ -129,41 +129,29 @@ const ReminderView = ({ sectionId }) => {
     const sentReminders = reminders.filter(r => r.isSent);
 
     return (
-        <div className="h-full flex flex-col p-4">
+        <div className="h-full flex flex-col sm:p-4">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Reminders</h2>
-            <p className="text-xs text-gray-500 mb-4">Create time-based reminders. Active ones stay on top; sent ones are kept separately.</p>
+            <p className="text-xs text-gray-500 mb-4">Set one-off or repeating reminders for your group.</p>
 
-            {/* SECTION 1: Reminder details */}
-            <form onSubmit={handleAddReminder} className="space-y-4 mb-4">
-                <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 space-y-3">
-                    <div>
-                        <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase mb-1">Reminder details</p>
-                        <p className="text-[11px] text-gray-400">Give your reminder a clear title and optional description.</p>
+            <form onSubmit={handleAddReminder} className="mb-4">
+                <div className="bg-white rounded-lg border border-gray-100 p-3 sm:p-4 space-y-3">
+                    <div className="space-y-2">
+                        <input
+                            type="text"
+                            placeholder="Reminder title"
+                            value={newReminderTitle}
+                            onChange={(e) => setNewReminderTitle(e.target.value)}
+                            className="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                            required
+                        />
+                        <textarea
+                            placeholder="Description (optional)"
+                            value={newReminderDescription}
+                            onChange={(e) => setNewReminderDescription(e.target.value)}
+                            className="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y min-h-[70px]"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Reminder title"
-                        value={newReminderTitle}
-                        onChange={(e) => setNewReminderTitle(e.target.value)}
-                        className="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                        required
-                    />
-                    <textarea
-                        placeholder="Description (optional)"
-                        value={newReminderDescription}
-                        onChange={(e) => setNewReminderDescription(e.target.value)}
-                        className="w-full border border-gray-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 resize-y min-h-[70px]"
-                    />
-                </div>
 
-                {/* SECTION 2: Schedule */}
-                <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                        <div>
-                            <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase mb-1">Schedule</p>
-                            <p className="text-[11px] text-gray-400">Choose when this reminder should fire and how often.</p>
-                        </div>
-                    </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1">
                             <label className="text-[11px] font-medium text-gray-600">Due date &amp; time</label>
@@ -174,7 +162,7 @@ const ReminderView = ({ sectionId }) => {
                                 className="w-full h-10 border border-gray-200 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                                 required
                             />
-                            <p className="text-[11px] text-gray-400">Tip: set it to when you want to be nudged.</p>
+                            <p className="text-[11px] text-gray-400">Set this to when you want to be nudged.</p>
                         </div>
                         <div className="space-y-1">
                             <label className="text-[11px] font-medium text-gray-600">Frequency</label>
@@ -191,48 +179,46 @@ const ReminderView = ({ sectionId }) => {
                             </select>
                         </div>
                     </div>
-                </div>
 
-                {/* SECTION 3: Notification */}
-                <div className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div>
-                        <p className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase mb-1">Notification</p>
-                        <p className="text-[11px] text-gray-400">We can also email you when this reminder is due.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-gray-100">
+                        <div>
+                            <p className="text-[11px] font-medium text-gray-600">Email notification</p>
+                            <p className="text-[11px] text-gray-400">We can email you when this reminder is due.</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setNotify(!notify)}
+                                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border transition-colors duration-200 focus:outline-none ${notify ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-200'}`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${notify ? 'translate-x-4' : 'translate-x-1'}`}
+                                />
+                            </button>
+                            <span className="text-xs text-gray-700">Email me for this reminder</span>
+                        </div>
+                        <div className="flex justify-end gap-2 sm:ml-4">
+                            {editingId && (
+                                <button
+                                    type="button"
+                                    onClick={cancelEdit}
+                                    className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                            <button
+                                type="submit"
+                                className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700"
+                            >
+                                {editingId ? 'Update reminder' : 'Set reminder'}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setNotify(!notify)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border transition-colors duration-200 focus:outline-none ${notify ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-200'}`}
-                        >
-                            <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${notify ? 'translate-x-5' : 'translate-x-1'}`}
-                            />
-                        </button>
-                        <span className="text-xs text-gray-700">Email me for this reminder</span>
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-1">
-                    {editingId && (
-                        <button
-                            type="button"
-                            onClick={cancelEdit}
-                            className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50"
-                        >
-                            Cancel
-                        </button>
-                    )}
-                    <button
-                        type="submit"
-                        className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700"
-                    >
-                        {editingId ? 'Update reminder' : 'Set reminder'}
-                    </button>
                 </div>
             </form>
 
-            <div className="flex-1 overflow-y-auto space-y-4 mt-1">
+            <div className="flex-1 overflow-y-auto space-y-3 mt-1">
                 <div>
                     <div className="flex items-center justify-between mb-2">
                         <span className="flex items-center gap-2">
@@ -249,7 +235,7 @@ const ReminderView = ({ sectionId }) => {
                         {activeReminders.map(reminder => (
                             <div
                                 key={reminder.id}
-                                className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-start justify-between gap-3"
+                                className="bg-white border border-gray-100 rounded-lg p-3 flex items-start justify-between gap-3"
                             >
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start justify-between gap-2">
