@@ -16,7 +16,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // ✅ Since cloudflare quick tunnel host keeps changing
-        config.setAllowedOriginPatterns(List.of("https://*.trycloudflare.com", "http://*"));
+        config.setAllowedOriginPatterns(List.of("https://*.trycloudflare.com", "http://*", "https://*.vercel.app"));
 
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
