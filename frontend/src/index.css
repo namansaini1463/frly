@@ -11,3 +11,17 @@ body {
   color: #333;
   @apply bg-gray-50;
 }
+
+/* Toast layout tweaks for mobile: narrower, padded from top, slightly inset from left */
+@media (max-width: 640px) {
+  .Toastify__toast-container--top-right {
+    width: 80% !important;
+    left: 10% !important;
+    right: auto !important;
+    top: 1.25rem !important;
+  }
+
+  .Toastify__toast {
+    border-radius: 0.75rem !important;
+  }
+}

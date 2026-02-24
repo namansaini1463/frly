@@ -6,5 +6,6 @@ public enum SectionType {
     NOTE,
     REMINDER,
     GALLERY,
-    PAYMENT
+    PAYMENT,
+    CALENDAR
 }

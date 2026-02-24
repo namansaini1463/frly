@@ -12,6 +12,8 @@ import com.example.frly.section.dto.ReminderDto;
 import com.example.frly.section.dto.CreateReminderRequestDto;
 import com.example.frly.section.model.Note;
 import com.example.frly.section.model.Reminder;
+import com.example.frly.section.model.CalendarEvent;
+import com.example.frly.section.model.CalendarEventMember;
 import com.example.frly.section.model.Section;
 import com.example.frly.section.repository.*;
 import static com.example.frly.constants.LogConstants.*;
@@ -38,6 +40,8 @@ public class SectionService {
     private final ListItemRepository listItemRepository;
     private final NoteRepository noteRepository;
     private final ReminderRepository reminderRepository;
+    private final CalendarEventRepository calendarEventRepository;
+    private final CalendarEventMemberRepository calendarEventMemberRepository;
     private final GroupService groupService;
     private final SectionMapper sectionMapper;
     private final UserRepository userRepository;
@@ -284,6 +288,120 @@ public class SectionService {
         }
 
         reminderRepository.save(reminder);
+    }
+
+    // --- CALENDAR EVENTS ---
+
+    @Transactional
+    public Long addCalendarEvent(Long sectionId, com.example.frly.section.dto.CreateCalendarEventRequestDto request) {
+        groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
+
+        Section section = sectionRepository.getReferenceById(sectionId);
+        if (section.getType() != SectionType.CALENDAR) {
+            throw new IllegalArgumentException("Cannot add calendar event to non-CALENDAR section");
+        }
+
+        CalendarEvent event = new CalendarEvent();
+        event.setSection(section);
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setStartTime(request.getStartTime());
+        event.setEndTime(request.getEndTime());
+        event.setLocation(request.getLocation());
+        event.setCategory(request.getCategory());
+
+        event = calendarEventRepository.save(event);
+
+        if (request.getMemberIds() != null && !request.getMemberIds().isEmpty()) {
+            for (Long memberUserId : request.getMemberIds()) {
+                CalendarEventMember cem = new CalendarEventMember();
+                cem.setEvent(event);
+                cem.setUser(new com.example.frly.user.User());
+                cem.getUser().setId(memberUserId);
+                calendarEventMemberRepository.save(cem);
+            }
+        }
+
+        return event.getId();
+    }
+
+    public java.util.List<com.example.frly.section.dto.CalendarEventDto> getCalendarEvents(Long sectionId) {
+        groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
+
+        java.util.List<CalendarEvent> events = calendarEventRepository.findBySectionIdOrderByStartTimeAsc(sectionId);
+
+        java.util.List<Long> eventIds = events.stream().map(CalendarEvent::getId).toList();
+        java.util.Map<Long, java.util.List<Long>> membersByEvent = new java.util.HashMap<>();
+        if (!eventIds.isEmpty()) {
+            for (CalendarEventMember cem : calendarEventMemberRepository.findByEventIdIn(eventIds)) {
+                membersByEvent
+                    .computeIfAbsent(cem.getEvent().getId(), k -> new java.util.ArrayList<>())
+                    .add(cem.getUser().getId());
+            }
+        }
+
+        return events.stream()
+            .map(event -> {
+                var dto = sectionMapper.toCalendarEventDto(event);
+                if (event.getCreatedBy() != null) {
+                    userRepository.findById(event.getCreatedBy()).ifPresent(user -> {
+                        String name = (user.getFirstName() != null ? user.getFirstName() : "")
+                                + (user.getLastName() != null ? (" " + user.getLastName()) : "");
+                        dto.setCreatedByName(name.trim().isEmpty() ? user.getEmail() : name.trim());
+                    });
+                }
+                dto.setMemberIds(membersByEvent.getOrDefault(event.getId(), java.util.Collections.emptyList()));
+                return dto;
+            })
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteCalendarEvent(Long eventId) {
+        groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
+
+        calendarEventMemberRepository.deleteByEventId(eventId);
+        calendarEventRepository.deleteById(eventId);
+    }
+
+    @Transactional
+    public void updateCalendarEvent(Long eventId, com.example.frly.section.dto.UpdateCalendarEventRequestDto request) {
+        groupService.validateGroupAccess(AuthUtil.getCurrentUserId(), GroupContext.getGroupId());
+
+        CalendarEvent event = calendarEventRepository.findById(eventId)
+            .orElseThrow(() -> new RuntimeException("Calendar event not found"));
+
+        if (request.getTitle() != null) {
+            event.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            event.setDescription(request.getDescription());
+        }
+        if (request.getStartTime() != null) {
+            event.setStartTime(request.getStartTime());
+        }
+        if (request.getEndTime() != null) {
+            event.setEndTime(request.getEndTime());
+        }
+        if (request.getLocation() != null) {
+            event.setLocation(request.getLocation());
+        }
+        if (request.getCategory() != null) {
+            event.setCategory(request.getCategory());
+        }
+
+        calendarEventRepository.save(event);
+
+        if (request.getMemberIds() != null) {
+            calendarEventMemberRepository.deleteByEventId(eventId);
+            for (Long memberUserId : request.getMemberIds()) {
+                CalendarEventMember cem = new CalendarEventMember();
+                cem.setEvent(event);
+                cem.setUser(new com.example.frly.user.User());
+                cem.getUser().setId(memberUserId);
+                calendarEventMemberRepository.save(cem);
+            }
+        }
     }
 
 }

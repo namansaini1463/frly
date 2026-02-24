@@ -104,4 +104,31 @@ public class SectionController {
         return ResponseEntity.ok().build();
     }
 
+    // --- CALENDAR EVENTS ---
+
+    @PostMapping("/{sectionId}/calendar-events")
+    public ResponseEntity<Long> addCalendarEvent(@PathVariable Long sectionId,
+                                                 @RequestBody com.example.frly.section.dto.CreateCalendarEventRequestDto request) {
+        Long eventId = sectionService.addCalendarEvent(sectionId, request);
+        return ResponseEntity.ok(eventId);
+    }
+
+    @GetMapping("/{sectionId}/calendar-events")
+    public ResponseEntity<java.util.List<com.example.frly.section.dto.CalendarEventDto>> getCalendarEvents(@PathVariable Long sectionId) {
+        return ResponseEntity.ok(sectionService.getCalendarEvents(sectionId));
+    }
+
+    @DeleteMapping("/calendar-events/{eventId}")
+    public ResponseEntity<Void> deleteCalendarEvent(@PathVariable Long eventId) {
+        sectionService.deleteCalendarEvent(eventId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/calendar-events/{eventId}")
+    public ResponseEntity<Void> updateCalendarEvent(@PathVariable Long eventId,
+                                                    @RequestBody com.example.frly.section.dto.UpdateCalendarEventRequestDto request) {
+        sectionService.updateCalendarEvent(eventId, request);
+        return ResponseEntity.ok().build();
+    }
+
 }

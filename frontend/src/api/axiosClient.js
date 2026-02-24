@@ -1,9 +1,11 @@
 import axios from 'axios';
 
+// Configure API base URL via Vite env (VITE_API_BASE_URL) so that
+// changing the backend host only requires editing the env file.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const axiosClient = axios.create({
-  // baseURL: 'http://192.168.1.17:8080/api', // Update if backend port differs
-  baseURL: 'http://172.20.10.3:8080/api', // Update if backend port differs
-  // baseURL: 'http://localhost:8080/api', // Update if backend port differs
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -7,6 +7,7 @@ import NoteView from '../components/sections/NoteView';
 import ListView from '../components/sections/ListView';
 import GalleryView from '../components/sections/GalleryView';
 import ReminderView from '../components/sections/ReminderView';
+import CalendarView from '../components/sections/CalendarView';
 import FolderView from '../components/sections/FolderView';
 import PaymentView from '../components/sections/PaymentView';
 import CreateSectionModal from '../components/CreateSectionModal';
@@ -74,6 +75,12 @@ const SectionView = () => {
     };
 
     const handleGoToGroup = () => {
+        // On mobile, always send users to the overview (BENTO) view.
+        if (typeof window !== 'undefined' && window.innerWidth < 640) {
+            navigate(`/groups/${groupId}?view=BENTO`);
+            return;
+        }
+
         const pref = currentGroup?.viewPreference;
         const normalized = pref === 'BENTO' || pref === 'WORKSPACE' ? pref : null;
         const suffix = normalized ? `?view=${normalized}` : '';
@@ -156,6 +163,8 @@ const SectionView = () => {
                 return <ReminderView sectionId={section.id} />;
             case 'PAYMENT':
                 return <PaymentView sectionId={section.id} />;
+            case 'CALENDAR':
+                return <CalendarView sectionId={section.id} />;
             case 'FOLDER':
                 return (
                     <FolderView
@@ -180,7 +189,9 @@ const SectionView = () => {
                     ? 'Reminder'
                     : section?.type === 'PAYMENT'
                         ? 'Expenses'
-                        : 'Folder';
+                        : section?.type === 'CALENDAR'
+                            ? 'Calendar'
+                            : 'Folder';
 
     if (groupLoading && loading) {
         return (
@@ -271,7 +282,11 @@ const SectionView = () => {
                                                         ? 'bg-rose-50 border-rose-100 text-rose-700'
                                                         : section.type === 'REMINDER'
                                                             ? 'bg-amber-50 border-amber-100 text-amber-700'
-                                                            : 'bg-gray-50 border-gray-200 text-gray-700'
+                                                            : section.type === 'PAYMENT'
+                                                                ? 'bg-indigo-50 border-indigo-100 text-indigo-700'
+                                                                : section.type === 'CALENDAR'
+                                                                    ? 'bg-indigo-50 border-indigo-100 text-indigo-700'
+                                                                    : 'bg-gray-50 border-gray-200 text-gray-700'
                                             }`}
                                     >
                                         {typeLabel}

@@ -82,10 +82,10 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {totalGroups > 0 && (
-                    <>
-                        {/* Desktop / tablet cards */}
-                        <div className="hidden sm:grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {/* Stats row is shown even when user has no groups yet */}
+                <>
+                    {/* Desktop / tablet cards */}
+                    <div className="hidden sm:grid grid-cols-1 sm:grid-cols-4 gap-4">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase tracking-wide">Total groups</p>
@@ -145,7 +145,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </>
-                )}
+
 
                 {visibleGroups.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">

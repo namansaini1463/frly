@@ -13,7 +13,9 @@ const GroupManageModal = ({
   onDeleteSection,
   onViewMember,
   onLeaveGroup,
-  onInviteByEmail
+  onInviteByEmail,
+  joinRequests,
+  onApproveJoinRequest
 }) => {
   const [name, setName] = useState(group?.displayName || '');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -230,6 +232,44 @@ const GroupManageModal = ({
                   <div className="px-3 py-4 text-[11px] text-gray-400 text-center">No members found.</div>
                 )}
               </div>
+
+              {isAdmin && joinRequests && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Join requests</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px]">
+                      {joinRequests.length}
+                    </span>
+                  </div>
+                  {joinRequests.length === 0 ? (
+                    <p className="px-3 py-3 text-[11px] text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
+                      No pending join requests.
+                    </p>
+                  ) : (
+                    <div className="border rounded-lg max-h-32 overflow-y-auto divide-y divide-gray-100 bg-gray-50 mt-1">
+                      {joinRequests.map((req) => (
+                        <div key={req.memberId} className="flex items-center justify-between px-3 py-2 text-[11px] text-gray-700">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{req.firstName} {req.lastName}</p>
+                            {req.email && (
+                              <p className="text-[10px] text-gray-500 truncate">{req.email}</p>
+                            )}
+                          </div>
+                          {onApproveJoinRequest && (
+                            <button
+                              type="button"
+                              onClick={() => onApproveJoinRequest(req.memberId)}
+                              className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-medium hover:bg-blue-700"
+                            >
+                              Approve
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           </div>
 
