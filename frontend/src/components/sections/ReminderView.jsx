@@ -34,7 +34,7 @@ const ReminderView = ({ sectionId }) => {
             setReminders(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Failed to fetch reminders", error);
-            // If 403, parent GroupView should have handled it or we can show error here
+            
         }
     };
 

@@ -62,6 +62,7 @@ const CreateSectionModal = ({ onClose, onCreated, groupId, parentId = null }) =>
                             <option value="GALLERY">Files</option>
                             <option value="REMINDER">Reminder</option>
                             <option value="PAYMENT">Expenses</option>
+                            <option value="CALENDAR">Calendar</option>
                             <option value="FOLDER">Folder</option>
                         </select>
                     </div>

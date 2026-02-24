@@ -341,10 +341,16 @@ public class GroupService {
 
         try {
             Long groupId = Long.parseLong(groupIdStr);
-            boolean exists = groupMemberRepository.existsByUserIdAndGroupId(userId, groupId);
-            if (!exists) {
-                log.warn("{}, User: {}, Group: {}", SECURITY_ALERT_NO_ACCESS, userId, groupId);
-                throw new BadRequestException("Access Denied: You are not a member of this group");
+
+            GroupMember member = groupMemberRepository.findByUserIdAndGroupId(userId, groupId)
+                    .orElseThrow(() -> {
+                        log.warn("{}, User: {}, Group: {}", SECURITY_ALERT_NO_ACCESS, userId, groupId);
+                        return new BadRequestException("Access Denied: You are not a member of this group");
+                    });
+
+            if (member.getStatus() != GroupMemberStatus.APPROVED) {
+                log.warn("SECURITY ALERT: Non-approved membership {} for user {} on group {}", member.getStatus(), userId, groupId);
+                throw new BadRequestException("Access Denied: Your membership is not approved for this group");
             }
         } catch (NumberFormatException e) {
             throw new BadRequestException("Invalid Group ID format");
@@ -452,6 +458,11 @@ public class GroupService {
     private void validateAdminAccess(Long userId, Long groupId) {
         var memberOpt = groupMemberRepository.findByUserIdAndGroupId(userId, groupId);
         GroupMember member = memberOpt.orElseThrow(() -> new BadRequestException("Access Denied: You are not a member of this group"));
+
+        if (member.getStatus() != GroupMemberStatus.APPROVED) {
+            log.warn("SECURITY ALERT: Non-approved member {} attempted admin operation on group {}", userId, groupId);
+            throw new BadRequestException("Access Denied: Your membership is not approved for this group");
+        }
 
         if (member.getRole() == null || member.getRole().getName() == null || !"ADMIN".equals(member.getRole().getName())) {
             log.warn("SECURITY ALERT: Non-admin user {} attempted admin operation on group {}", userId, groupId);

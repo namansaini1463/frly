@@ -81,6 +81,34 @@ export const useSectionPreviews = (sections) => {
                             totalSpent,
                             hasActivity: balances.length > 0 || expenses.length > 0,
                         };
+                    } else if (section.type === 'CALENDAR') {
+                        const res = await axiosClient.get(`/groups/sections/${section.id}/calendar-events`);
+                        const events = Array.isArray(res.data) ? res.data : [];
+
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        const isSameDay = (a, b) => {
+                            const da = new Date(a);
+                            const db = new Date(b);
+                            return da.getFullYear() === db.getFullYear()
+                                && da.getMonth() === db.getMonth()
+                                && da.getDate() === db.getDate();
+                        };
+
+                        const todayEvents = events.filter(ev => ev.startTime && isSameDay(ev.startTime, today))
+                            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+                            .slice(0, 3)
+                            .map(ev => ({
+                                title: ev.title,
+                                startTime: ev.startTime,
+                            }));
+
+                        newPreviews[section.id] = {
+                            kind: 'CALENDAR',
+                            todayEvents,
+                            totalCount: events.length,
+                        };
                     }
                 } catch (error) {
                     // console.debug('Preview load failed', section.id);

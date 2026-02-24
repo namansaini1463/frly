@@ -61,6 +61,13 @@ const SidebarSection = ({ section, allSections, selectedSection, onSelect, depth
             typeLabelClasses = isSelected ? 'text-indigo-700' : 'text-indigo-500';
             indicatorClasses = 'border-indigo-400';
             break;
+        case 'CALENDAR':
+            typeClasses = isSelected
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-800';
+            typeLabelClasses = isSelected ? 'text-indigo-700' : 'text-indigo-500';
+            indicatorClasses = 'border-indigo-400';
+            break;
         case 'FOLDER':
             typeClasses = isSelected
                 ? 'bg-slate-50 text-slate-800 shadow-sm'
@@ -122,6 +129,7 @@ const SidebarSection = ({ section, allSections, selectedSection, onSelect, depth
                         {section.type === 'GALLERY' && 'Files'}
                         {section.type === 'REMINDER' && 'Reminder'}
                         {section.type === 'PAYMENT' && 'Expenses'}
+                        {section.type === 'CALENDAR' && 'Calendar'}
                     </span>
                 )}
             </div>

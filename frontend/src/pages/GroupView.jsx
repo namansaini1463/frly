@@ -7,6 +7,7 @@ import NoteView from '../components/sections/NoteView';
 import ListView from '../components/sections/ListView';
 import GalleryView from '../components/sections/GalleryView';
 import ReminderView from '../components/sections/ReminderView';
+import CalendarView from '../components/sections/CalendarView';
 import FolderView from '../components/sections/FolderView';
 import PaymentView from '../components/sections/PaymentView';
 import CreateSectionModal from '../components/CreateSectionModal';
@@ -436,6 +437,7 @@ const GroupView = () => {
             case 'GALLERY': return <GalleryView sectionId={selectedSection.id} />;
             case 'REMINDER': return <ReminderView sectionId={selectedSection.id} />;
             case 'PAYMENT': return <PaymentView sectionId={selectedSection.id} />;
+            case 'CALENDAR': return <CalendarView sectionId={selectedSection.id} />;
             case 'FOLDER': return (
                 <FolderView
                     sectionId={selectedSection.id}
@@ -702,18 +704,6 @@ const GroupView = () => {
                             </div>
                         )}
                         {/* Link to dashboard or something could go here */}
-                        {selectedSection && selectedSection.parentId && (
-                            <button
-                                onClick={() => {
-                                    // Find parent
-                                    const parent = sections.find(s => s.id === selectedSection.parentId);
-                                    if (parent) handleSelectSection(parent);
-                                }}
-                                className="mt-2 w-full text-xs text-gray-500 hover:text-gray-700"
-                            >
-                                ↑ Up to Parent Folder
-                            </button>
-                        )}
                     </div>
                 </aside>
 
@@ -732,14 +722,16 @@ const GroupView = () => {
                                                 : selectedSection.type === 'GALLERY' ? 'bg-rose-50 border-rose-100 text-rose-700'
                                                     : selectedSection.type === 'REMINDER' ? 'bg-amber-50 border-amber-100 text-amber-700'
                                                         : selectedSection.type === 'PAYMENT' ? 'bg-indigo-50 border-indigo-100 text-indigo-700'
-                                                            : 'bg-gray-50 border-gray-200 text-gray-700'
+                                                            : selectedSection.type === 'CALENDAR' ? 'bg-indigo-50 border-indigo-100 text-indigo-700'
+                                                                : 'bg-gray-50 border-gray-200 text-gray-700'
                                             }`}>
                                             {selectedSection.type === 'NOTE' ? 'Note'
                                                 : selectedSection.type === 'LIST' ? 'Checklist'
                                                     : selectedSection.type === 'GALLERY' ? 'Files'
                                                         : selectedSection.type === 'REMINDER' ? 'Reminder'
                                                             : selectedSection.type === 'PAYMENT' ? 'Expenses'
-                                                                : 'Folder'}
+                                                                : selectedSection.type === 'CALENDAR' ? 'Calendar'
+                                                                    : 'Folder'}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
@@ -825,6 +817,8 @@ const GroupView = () => {
                             handleDeleteSectionById(section);
                         }}
                         onViewMember={(member) => setSelectedMemberForInfo(member)}
+                        joinRequests={pendingRequests}
+                        onApproveJoinRequest={handleApproveRequest}
                         onInviteByEmail={currentGroup.currentUserRole === 'ADMIN' ? async (email) => {
                             try {
                                 await axiosClient.post(`/groups/${groupId}/invites`, { email });
@@ -864,7 +858,7 @@ const GroupView = () => {
 
     // BENTO / OVERVIEW VIEW: grid of sections with quick info
     return (
-        <div className="min-h-screen bg-gray-50 px-2 sm:px-4 py-4 flex flex-col">
+        <div className="min-h-screen bg-gray-50 px-2 sm:px-4 flex flex-col">
             <div className="max-w-7xl mx-auto space-y-6 flex-1 w-full">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1 min-w-0">
@@ -1005,6 +999,8 @@ const GroupView = () => {
                         handleDeleteSectionById(section);
                     }}
                     onViewMember={(member) => setSelectedMemberForInfo(member)}
+                    joinRequests={pendingRequests}
+                    onApproveJoinRequest={handleApproveRequest}
                     onInviteByEmail={currentGroup.currentUserRole === 'ADMIN' ? async (email) => {
                         try {
                             await axiosClient.post(`/groups/${groupId}/invites`, { email });

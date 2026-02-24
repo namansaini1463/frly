@@ -5,7 +5,7 @@ const BentoGrid = ({ sections, previews, allSections, groupId, onOpenCreateModal
     const navigate = useNavigate();
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {sections.map(section => {
                 // For Folders, calculate children from the *full* list if available
                 const childrenCount = allSections
@@ -17,14 +17,16 @@ const BentoGrid = ({ sections, previews, allSections, groupId, onOpenCreateModal
                         : section.type === 'GALLERY' ? 'Files'
                             : section.type === 'REMINDER' ? 'Reminder'
                                 : section.type === 'PAYMENT' ? 'Expenses'
-                                    : 'Folder';
+                                    : section.type === 'CALENDAR' ? 'Calendar'
+                                        : 'Folder';
 
                 const typeBadgeClass = section.type === 'NOTE' ? 'bg-blue-50 text-blue-700'
                     : section.type === 'LIST' ? 'bg-emerald-50 text-emerald-700'
                         : section.type === 'GALLERY' ? 'bg-rose-50 text-rose-700'
                             : section.type === 'REMINDER' ? 'bg-amber-50 text-amber-700'
                                 : section.type === 'PAYMENT' ? 'bg-purple-50 text-purple-700'
-                                    : 'bg-gray-100 text-gray-700';
+                                    : section.type === 'CALENDAR' ? 'bg-indigo-50 text-indigo-700'
+                                        : 'bg-gray-100 text-gray-700';
 
                 const preview = previews[section.id];
 
@@ -131,6 +133,30 @@ const BentoGrid = ({ sections, previews, allSections, groupId, onOpenCreateModal
                                     <p className="text-lg font-bold text-gray-800">
                                         {preview.totalSpent?.toFixed(2) || '0.00'}
                                     </p>
+                                </div>
+                            ) : preview?.kind === 'CALENDAR' ? (
+                                <div className="flex flex-col gap-1">
+                                    {preview.todayEvents && preview.todayEvents.length > 0 ? (
+                                        <ul className="space-y-0.5 max-h-16 overflow-hidden">
+                                            {preview.todayEvents.map((ev, idx) => (
+                                                <li key={idx} className="flex items-center justify-between text-xs">
+                                                    <span className="truncate text-gray-700">{ev.title}</span>
+                                                    {ev.startTime && (
+                                                        <span className="text-[10px] text-gray-400 whitespace-nowrap ml-1">
+                                                            {new Date(ev.startTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-xs text-gray-400">No events today</p>
+                                    )}
+                                    {typeof preview.totalCount === 'number' && preview.totalCount > 0 && (
+                                        <p className="text-[10px] text-gray-400 mt-1">
+                                            {preview.totalCount} total event{preview.totalCount !== 1 ? 's' : ''}
+                                        </p>
+                                    )}
                                 </div>
                             ) : (
                                 // Folder

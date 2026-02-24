@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
 
 const GroupInvite = () => {
   const query = useQuery();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const token = query.get('token') || '';
   const action = (query.get('action') || 'accept').toLowerCase();
 
@@ -60,20 +62,23 @@ const GroupInvite = () => {
         </h1>
         <p className={`text-xs mb-4 ${isError ? 'text-red-500' : 'text-gray-600'}`}>{message}</p>
         <div className="mt-4 flex justify-center gap-3 text-xs">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-          >
-            Go to dashboard
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/login')}
-            className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            Sign in
-          </button>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            >
+              Go to dashboard
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+            >
+              Sign in
+            </button>
+          )}
         </div>
       </div>
     </div>

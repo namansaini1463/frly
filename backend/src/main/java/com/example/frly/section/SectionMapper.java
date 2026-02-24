@@ -6,6 +6,7 @@ import com.example.frly.section.model.ListItem;
 import com.example.frly.section.model.Note;
 import com.example.frly.section.model.Reminder;
 import com.example.frly.section.model.Section;
+import com.example.frly.section.model.CalendarEvent;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -29,6 +30,9 @@ public interface SectionMapper {
 
     @Mapping(target = "sectionId", source = "section.id")
     GalleryItemDto toGalleryItemDto(GalleryItem item);
+
+    @Mapping(target = "sectionId", source = "section.id")
+    CalendarEventDto toCalendarEventDto(CalendarEvent event);
 
     default LocalDateTime map(Instant value) {
         return value == null ? null : LocalDateTime.ofInstant(value, ZoneId.systemDefault());

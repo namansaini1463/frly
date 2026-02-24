@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axiosClient from '../api/axiosClient';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext(null);
 
@@ -42,6 +43,20 @@ export const AuthProvider = ({ children }) => {
             setUser(null);
         }
         setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        // Show a one-time message if a previous request triggered an auth-expired logout
+        if (typeof window === 'undefined') return;
+        try {
+            const flag = sessionStorage.getItem('authExpired');
+            if (flag === '1') {
+                sessionStorage.removeItem('authExpired');
+                toast.error('Your session expired. Please sign in again.');
+            }
+        } catch {
+            // ignore storage issues
+        }
     }, []);
 
     const login = async (email, password) => {
@@ -92,9 +107,8 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('fontPreference', next.fontPreference);
                 applyFontPreference(next.fontPreference);
             }
-            if (next.token) {
-                localStorage.setItem('user', JSON.stringify(next));
-            }
+            // Always persist the latest user details so header/avatar stay in sync
+            localStorage.setItem('user', JSON.stringify(next));
             return next;
         });
     };

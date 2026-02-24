@@ -70,11 +70,7 @@ function App() {
           />
           <Route
             path="/group-invite"
-            element={
-              <PublicRoute>
-                <GroupInvite />
-              </PublicRoute>
-            }
+            element={<GroupInvite />}
           />
           <Route path="/features" element={<Features />} />
           <Route path="/integrations" element={<Integrations />} />
